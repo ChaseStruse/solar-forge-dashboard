@@ -20,7 +20,9 @@ Item {
     root.refreshGitHub()
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
-  function close() { root.dismiss() }
+  // Omarchy calls close() after shell.hide(). Calling shell.hide() again here
+  // re-enters close() indefinitely, so this lifecycle handler only updates UI.
+  function close() { root.opened = false }
   function toggle() { if (root.opened) root.dismiss(); else root.open("{}") }
   function dismiss() {
     root.opened = false
