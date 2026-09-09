@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Controls
 import QtQuick.LocalStorage
 import qs.Commons
 import qs.Ui
@@ -21,8 +22,6 @@ Item {
   function open(payloadJson) {
     root.closingFromHost = false
     root.opened = true
-    // Reopen in normal state; fullscreen is only entered deliberately with F11.
-    window.showNormal()
     root.refreshGitHub()
     Qt.callLater(function() { newTodoInput.forceActiveFocus() })
   }
@@ -38,10 +37,6 @@ Item {
     root.opened = false
     if (root.shell && typeof root.shell.hide === "function")
       root.shell.hide((root.manifest && root.manifest.id) || "io.github.chasestruse.solar-forge-dashboard")
-  }
-  function toggleFullscreen() {
-    if (window.visibility === Window.FullScreen) window.showNormal()
-    else window.showFullScreen()
   }
   function greetingPeriod() {
     var hour = clock.date.getHours()
@@ -190,12 +185,6 @@ Item {
             clip: true
             onAccepted: root.addTodo()
             Keys.onEscapePressed: root.dismiss()
-            Keys.onPressed: function(event) {
-              if (event.key === Qt.Key_F11) {
-                root.toggleFullscreen()
-                event.accepted = true
-              }
-            }
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
@@ -207,40 +196,64 @@ Item {
           }
         }
 
-        Repeater {
-          model: todoModel
-          delegate: Rectangle {
-            required property int taskId
-            required property string title
-            required property bool done
-            width: parent.width
-            height: 38
-            color: done ? "#081412" : "#0b1b19"
-            border.color: "#21423d"
-            border.width: 1
+        // Keep the command center compact even when the task backlog grows.
+        // This viewport is exactly three task rows high; the scrollbar appears
+        // only once there are more rows to browse.
+        Flickable {
+          id: todoViewport
+          width: parent.width
+          height: 3 * 38 + 2 * 8
+          contentWidth: width
+          contentHeight: todoColumn.height
+          clip: true
+          boundsBehavior: Flickable.StopAtBounds
 
-            Rectangle {
-              id: completionBox
-              width: 16; height: 16
-              anchors.left: parent.left; anchors.leftMargin: 11
-              anchors.verticalCenter: parent.verticalCenter
-              color: done ? "#23f7c4" : "transparent"
-              border.color: "#23f7c4"
-              border.width: 1
-              Text { anchors.centerIn: parent; text: done ? "✓" : ""; color: "#06100f"; font.bold: true; font.pixelSize: 13 }
+          Column {
+            id: todoColumn
+            width: todoViewport.width - (todoModel.count > 3 ? todoScrollbar.width + 6 : 0)
+            spacing: 8
+
+            Repeater {
+              model: todoModel
+              delegate: Rectangle {
+                required property int taskId
+                required property string title
+                required property bool done
+                width: todoColumn.width
+                height: 38
+                color: done ? "#081412" : "#0b1b19"
+                border.color: "#21423d"
+                border.width: 1
+
+                Rectangle {
+                  id: completionBox
+                  width: 16; height: 16
+                  anchors.left: parent.left; anchors.leftMargin: 11
+                  anchors.verticalCenter: parent.verticalCenter
+                  color: done ? "#23f7c4" : "transparent"
+                  border.color: "#23f7c4"
+                  border.width: 1
+                  Text { anchors.centerIn: parent; text: done ? "✓" : ""; color: "#06100f"; font.bold: true; font.pixelSize: 13 }
+                }
+                Text {
+                  anchors.left: completionBox.right; anchors.leftMargin: 10
+                  anchors.right: parent.right; anchors.rightMargin: 10
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: title
+                  color: done ? "#58736d" : "#e3fff8"
+                  font.family: Style.font.menuFamily
+                  font.pixelSize: 14
+                  elide: Text.ElideRight
+                  font.strikeout: done
+                }
+                MouseArea { anchors.fill: parent; onClicked: root.toggleTodo(taskId, !done) }
+              }
             }
-            Text {
-              anchors.left: completionBox.right; anchors.leftMargin: 10
-              anchors.right: parent.right; anchors.rightMargin: 10
-              anchors.verticalCenter: parent.verticalCenter
-              text: title
-              color: done ? "#58736d" : "#e3fff8"
-              font.family: Style.font.menuFamily
-              font.pixelSize: 14
-              elide: Text.ElideRight
-              font.strikeout: done
-            }
-            MouseArea { anchors.fill: parent; onClicked: root.toggleTodo(taskId, !done) }
+          }
+
+          ScrollBar.vertical: ScrollBar {
+            id: todoScrollbar
+            policy: todoModel.count > 3 ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
           }
         }
 
@@ -282,16 +295,13 @@ Item {
           }
         }
       }
-      Text { text: "[ ESC ] close   [ F11 ] fullscreen / tiled"; color: "#58736d"; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
+      Text { text: "[ ESC ] close"; color: "#58736d"; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
     }
     Item {
       id: keyCatcher; anchors.fill: parent; focus: true
       Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Escape) {
           root.dismiss()
-          event.accepted = true
-        } else if (event.key === Qt.Key_F11) {
-          root.toggleFullscreen()
           event.accepted = true
         }
       }
