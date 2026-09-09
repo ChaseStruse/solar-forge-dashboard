@@ -6,7 +6,12 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 - Personalized greeting from the local user account
 - Live date and time
+- Up to four recently updated GitHub repositories
 - Fullscreen Omarchy overlay, dismissible with `Escape`
+
+## GitHub setup
+
+Solar Forge reads repository metadata through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. If `gh` is unavailable or signed out, the GitHub panel shows an actionable offline status.
 
 ## Roadmap
 
