@@ -2,11 +2,20 @@
   "schemaVersion": 1,
   "id": "io.github.chasestruse.solar-forge-dashboard",
   "name": "Solar Forge Dashboard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "Chase Struse",
   "license": "MIT",
-  "description": "A cyberpunk personal dashboard for Omarchy.",
-  "kinds": ["overlay"],
+  "description": "A cyberpunk personal dashboard for Omarchy, launched from the bar.",
+  "kinds": ["bar-widget"],
   "keepLoaded": true,
-  "entryPoints": { "overlay": "Dashboard.qml" }
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Solar Forge Dashboard",
+    "description": "Open the Solar Forge command center",
+    "category": "Productivity",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  }
 }
