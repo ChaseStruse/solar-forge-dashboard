@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.LocalStorage
 import qs.Commons
 import qs.Ui
 
@@ -12,6 +13,7 @@ Item {
   property bool opened: false
   property var repositories: []
   property string githubStatus: "Checking local GitHub access…"
+  readonly property int remainingTodos: todoModel.count - completedTodoCount()
   readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
   readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
 
@@ -43,7 +45,53 @@ Item {
     }
   }
 
+  function todoDatabase() {
+    return LocalStorage.openDatabaseSync("solar-forge-dashboard", "1.0", "Solar Forge tasks", 1000000)
+  }
+
+  function loadTodos() {
+    todoModel.clear()
+    var database = todoDatabase()
+    database.transaction(function(transaction) {
+      transaction.executeSql("CREATE TABLE IF NOT EXISTS todos (id INTEGER PRIMARY KEY, title TEXT NOT NULL, done INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)")
+      var result = transaction.executeSql("SELECT id, title, done FROM todos ORDER BY done ASC, created_at ASC")
+      for (var index = 0; index < result.rows.length; index++) {
+        var row = result.rows.item(index)
+        todoModel.append({ taskId: row.id, title: row.title, done: row.done === 1 })
+      }
+    })
+  }
+
+  function addTodo() {
+    var title = newTodoInput.text.trim()
+    if (!title) return
+    var database = todoDatabase()
+    database.transaction(function(transaction) {
+      transaction.executeSql("INSERT INTO todos (title, done, created_at) VALUES (?, ?, ?)", [title, 0, Date.now()])
+    })
+    newTodoInput.text = ""
+    root.loadTodos()
+    newTodoInput.forceActiveFocus()
+  }
+
+  function toggleTodo(taskId, done) {
+    var database = todoDatabase()
+    database.transaction(function(transaction) {
+      transaction.executeSql("UPDATE todos SET done = ? WHERE id = ?", [done ? 1 : 0, taskId])
+    })
+    root.loadTodos()
+  }
+
+  function completedTodoCount() {
+    var count = 0
+    for (var index = 0; index < todoModel.count; index++) {
+      if (todoModel.get(index).done) count++
+    }
+    return count
+  }
+
   SystemClock { id: clock; precision: SystemClock.Minutes }
+  ListModel { id: todoModel }
 
   Process {
     id: githubProcess
@@ -103,6 +151,88 @@ Item {
         spacing: 8
         topPadding: 12
 
+        Text { text: "TODAY'S OBJECTIVES // " + root.remainingTodos + " ACTIVE"; color: "#f6b65b"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
+
+        Rectangle {
+          width: parent.width
+          height: 42
+          color: "#0b1b19"
+          border.color: newTodoInput.activeFocus ? "#f6b65b" : "#21423d"
+          border.width: 1
+
+          TextInput {
+            id: newTodoInput
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            verticalAlignment: TextInput.AlignVCenter
+            color: "#e3fff8"
+            font.family: Style.font.menuFamily
+            font.pixelSize: 14
+            clip: true
+            onAccepted: root.addTodo()
+
+            Text {
+              anchors.verticalCenter: parent.verticalCenter
+              visible: !newTodoInput.text
+              text: "+ add an objective, then press Enter"
+              color: "#58736d"
+              font: newTodoInput.font
+            }
+          }
+        }
+
+        Repeater {
+          model: todoModel
+          delegate: Rectangle {
+            required property int taskId
+            required property string title
+            required property bool done
+            width: parent.width
+            height: 38
+            color: done ? "#081412" : "#0b1b19"
+            border.color: "#21423d"
+            border.width: 1
+
+            Rectangle {
+              id: completionBox
+              width: 16; height: 16
+              anchors.left: parent.left; anchors.leftMargin: 11
+              anchors.verticalCenter: parent.verticalCenter
+              color: done ? "#23f7c4" : "transparent"
+              border.color: "#23f7c4"
+              border.width: 1
+              Text { anchors.centerIn: parent; text: done ? "✓" : ""; color: "#06100f"; font.bold: true; font.pixelSize: 13 }
+            }
+            Text {
+              anchors.left: completionBox.right; anchors.leftMargin: 10
+              anchors.right: parent.right; anchors.rightMargin: 10
+              anchors.verticalCenter: parent.verticalCenter
+              text: title
+              color: done ? "#58736d" : "#e3fff8"
+              font.family: Style.font.menuFamily
+              font.pixelSize: 14
+              elide: Text.ElideRight
+              font.strikeout: done
+            }
+            MouseArea { anchors.fill: parent; onClicked: root.toggleTodo(taskId, !done) }
+          }
+        }
+
+        Text {
+          visible: todoModel.count === 0
+          text: "No objectives queued. Add the first one above."
+          color: "#58736d"
+          font.family: Style.font.menuFamily
+          font.pixelSize: 13
+        }
+      }
+
+      Column {
+        width: parent.width
+        spacing: 8
+        topPadding: 12
+
         Text { text: "GITHUB // " + root.githubStatus; color: "#23f7c4"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
 
         Repeater {
@@ -135,5 +265,8 @@ Item {
     }
   }
 
-  Component.onCompleted: root.refreshGitHub()
+  Component.onCompleted: {
+    root.loadTodos()
+    root.refreshGitHub()
+  }
 }

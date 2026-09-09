@@ -6,6 +6,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 - Personalized greeting from the local user account
 - Live date and time
+- Local persistent to-do list: add tasks with `Enter`, click to complete
 - Up to four recently updated GitHub repositories
 - Fullscreen Omarchy overlay, dismissible with `Escape`
 
