@@ -7,7 +7,6 @@
   "license": "MIT",
   "description": "A cyberpunk personal dashboard for Omarchy, launched from the bar.",
   "kinds": ["bar-widget"],
-  "keepLoaded": true,
   "entryPoints": {
     "barWidget": "BarWidget.qml"
   },
