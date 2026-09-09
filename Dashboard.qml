@@ -15,6 +15,18 @@ Item {
   property bool closingFromHost: false
   property var repositories: []
   property string githubStatus: "Checking local GitHub access…"
+  // Omarchy's Color singleton reloads these bindings whenever the desktop
+  // theme changes, keeping the dashboard aligned with the active palette.
+  readonly property color backgroundColor: Color.popups.background
+  readonly property color foregroundColor: Color.popups.text
+  readonly property color accentColor: Color.accent
+  readonly property color urgentColor: Color.urgent
+  readonly property color mutedColor: Color.muted
+  readonly property color surfaceColor: Util.alpha(Color.foreground, 0.08)
+  readonly property color completedSurfaceColor: Util.alpha(Color.foreground, 0.04)
+  readonly property color borderColor: Util.alpha(Color.popups.border, 0.48)
+  readonly property color dimmedTextColor: Util.alpha(Color.foreground, 0.62)
+  readonly property color faintTextColor: Util.alpha(Color.foreground, 0.45)
   readonly property int remainingTodos: todoModel.count - completedTodoCount()
   readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
   readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
@@ -134,7 +146,7 @@ Item {
     implicitWidth: 980
     implicitHeight: 820
     minimumSize: Qt.size(620, 520)
-    color: "#06100f"
+    color: root.backgroundColor
 
     // A FloatingWindow is an ordinary desktop window: Hyprland tiles it by
     // default, and its title bar retains the normal close control. F11 is an
@@ -143,34 +155,34 @@ Item {
       if (!visible && !root.closingFromHost) root.dismiss()
     }
 
-    Rectangle { anchors.fill: parent; color: "#06100f" }
+    Rectangle { anchors.fill: parent; color: root.backgroundColor }
     Rectangle {
       width: parent.width * 0.78; height: 1
       anchors.horizontalCenter: parent.horizontalCenter
       anchors.top: parent.top; anchors.topMargin: parent.height * 0.18
-      color: "#23f7c4"; opacity: 0.55
+      color: root.accentColor; opacity: 0.55
     }
     Column {
       width: Math.min(parent.width * 0.78, 960)
       anchors.centerIn: parent; spacing: 16
-      Text { text: "SOLAR FORGE // PERSONAL COMMAND CENTER"; color: "#23f7c4"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 2.4 }
-      Text { text: "Good " + greetingPeriod() + ", " + root.displayName + "."; color: "#e3fff8"; font.family: Style.font.menuFamily; font.pixelSize: Math.min(52, parent.width / 16); font.bold: true }
-      Text { text: Qt.formatDateTime(clock.date, "dddd, MMMM d, yyyy  //  HH:mm"); color: "#90b8ae"; font.family: Style.font.menuFamily; font.pixelSize: 18 }
-      Rectangle { width: parent.width; height: 1; color: "#23f7c4"; opacity: 0.3 }
-      Text { text: "SYSTEM ONLINE  ·  AWAITING YOUR NEXT OBJECTIVE"; color: "#f6b65b"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.5 }
+      Text { text: "SOLAR FORGE // PERSONAL COMMAND CENTER"; color: root.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 2.4 }
+      Text { text: "Good " + greetingPeriod() + ", " + root.displayName + "."; color: root.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: Math.min(52, parent.width / 16); font.bold: true }
+      Text { text: Qt.formatDateTime(clock.date, "dddd, MMMM d, yyyy  //  HH:mm"); color: root.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 18 }
+      Rectangle { width: parent.width; height: 1; color: root.accentColor; opacity: 0.3 }
+      Text { text: "SYSTEM ONLINE  ·  AWAITING YOUR NEXT OBJECTIVE"; color: root.urgentColor; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.5 }
 
       Column {
         width: parent.width
         spacing: 8
         topPadding: 12
 
-        Text { text: "TODAY'S OBJECTIVES // " + root.remainingTodos + " ACTIVE"; color: "#f6b65b"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
+        Text { text: "TODAY'S OBJECTIVES // " + root.remainingTodos + " ACTIVE"; color: root.urgentColor; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
 
         Rectangle {
           width: parent.width
           height: 42
-          color: "#0b1b19"
-          border.color: newTodoInput.activeFocus ? "#f6b65b" : "#21423d"
+          color: root.surfaceColor
+          border.color: newTodoInput.activeFocus ? root.accentColor : root.borderColor
           border.width: 1
 
           TextInput {
@@ -179,7 +191,7 @@ Item {
             anchors.leftMargin: 12
             anchors.rightMargin: 12
             verticalAlignment: TextInput.AlignVCenter
-            color: "#e3fff8"
+            color: root.foregroundColor
             font.family: Style.font.menuFamily
             font.pixelSize: 14
             clip: true
@@ -190,7 +202,7 @@ Item {
               anchors.verticalCenter: parent.verticalCenter
               visible: !newTodoInput.text
               text: "+ add an objective, then press Enter"
-              color: "#58736d"
+              color: root.faintTextColor
               font: newTodoInput.font
             }
           }
@@ -221,8 +233,8 @@ Item {
                 required property bool done
                 width: todoColumn.width
                 height: 38
-                color: done ? "#081412" : "#0b1b19"
-                border.color: "#21423d"
+                color: done ? root.completedSurfaceColor : root.surfaceColor
+                border.color: root.borderColor
                 border.width: 1
 
                 Rectangle {
@@ -230,17 +242,17 @@ Item {
                   width: 16; height: 16
                   anchors.left: parent.left; anchors.leftMargin: 11
                   anchors.verticalCenter: parent.verticalCenter
-                  color: done ? "#23f7c4" : "transparent"
-                  border.color: "#23f7c4"
+                  color: done ? root.accentColor : "transparent"
+                  border.color: root.accentColor
                   border.width: 1
-                  Text { anchors.centerIn: parent; text: done ? "✓" : ""; color: "#06100f"; font.bold: true; font.pixelSize: 13 }
+                  Text { anchors.centerIn: parent; text: done ? "✓" : ""; color: root.backgroundColor; font.bold: true; font.pixelSize: 13 }
                 }
                 Text {
                   anchors.left: completionBox.right; anchors.leftMargin: 10
                   anchors.right: parent.right; anchors.rightMargin: 10
                   anchors.verticalCenter: parent.verticalCenter
                   text: title
-                  color: done ? "#58736d" : "#e3fff8"
+                  color: done ? root.faintTextColor : root.foregroundColor
                   font.family: Style.font.menuFamily
                   font.pixelSize: 14
                   elide: Text.ElideRight
@@ -260,7 +272,7 @@ Item {
         Text {
           visible: todoModel.count === 0
           text: "No objectives queued. Add the first one above."
-          color: "#58736d"
+          color: root.faintTextColor
           font.family: Style.font.menuFamily
           font.pixelSize: 13
         }
@@ -271,7 +283,7 @@ Item {
         spacing: 8
         topPadding: 12
 
-        Text { text: "GITHUB // " + root.githubStatus; color: "#23f7c4"; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
+        Text { text: "GITHUB // " + root.githubStatus; color: root.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 14; font.letterSpacing: 1.4 }
 
         Repeater {
           model: root.repositories
@@ -279,8 +291,8 @@ Item {
             required property var modelData
             width: parent.width
             height: 46
-            color: "#0b1b19"
-            border.color: "#21423d"
+            color: root.surfaceColor
+            border.color: root.borderColor
             border.width: 1
 
             Column {
@@ -289,13 +301,13 @@ Item {
               anchors.right: parent.right
               anchors.margins: 10
               spacing: 2
-              Text { text: modelData.name + (modelData.isPrivate ? "  [PRIVATE]" : ""); color: "#e3fff8"; font.family: Style.font.menuFamily; font.pixelSize: 14 }
-              Text { text: modelData.description || "No description"; color: "#78958e"; font.family: Style.font.menuFamily; font.pixelSize: 12; elide: Text.ElideRight; width: parent.width }
+              Text { text: modelData.name + (modelData.isPrivate ? "  [PRIVATE]" : ""); color: root.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 14 }
+              Text { text: modelData.description || "No description"; color: root.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; elide: Text.ElideRight; width: parent.width }
             }
           }
         }
       }
-      Text { text: "[ ESC ] close"; color: "#58736d"; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
+      Text { text: "[ ESC ] close"; color: root.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
     }
     Item {
       id: keyCatcher; anchors.fill: parent; focus: true

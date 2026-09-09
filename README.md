@@ -10,6 +10,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Up to four recently updated GitHub repositories
 - Bar-launcher icon for the dashboard
 - Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
+- Colors automatically follow the active Omarchy theme
 
 ## Launching
 
