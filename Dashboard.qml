@@ -11,6 +11,7 @@ Item {
   property var shell: null
   property var manifest: null
   property bool opened: false
+  property bool closingFromHost: false
   property var repositories: []
   property string githubStatus: "Checking local GitHub access…"
   readonly property int remainingTodos: todoModel.count - completedTodoCount()
@@ -18,18 +19,29 @@ Item {
   readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
 
   function open(payloadJson) {
+    root.closingFromHost = false
     root.opened = true
+    // Reopen in normal state; fullscreen is only entered deliberately with F11.
+    window.showNormal()
     root.refreshGitHub()
-    Qt.callLater(function() { keyCatcher.forceActiveFocus() })
+    Qt.callLater(function() { newTodoInput.forceActiveFocus() })
   }
-  // Omarchy calls close() after shell.hide(). Calling shell.hide() again here
-  // re-enters close() indefinitely, so this lifecycle handler only updates UI.
-  function close() { root.opened = false }
+  // Host-initiated close: the host has already cleared its open state, so do
+  // not call shell.hide() from here or the lifecycle would re-enter itself.
+  function close() {
+    root.closingFromHost = true
+    root.opened = false
+    root.closingFromHost = false
+  }
   function toggle() { if (root.opened) root.dismiss(); else root.open("{}") }
   function dismiss() {
     root.opened = false
     if (root.shell && typeof root.shell.hide === "function")
       root.shell.hide((root.manifest && root.manifest.id) || "io.github.chasestruse.solar-forge-dashboard")
+  }
+  function toggleFullscreen() {
+    if (window.visibility === Window.FullScreen) window.showNormal()
+    else window.showFullScreen()
   }
   function greetingPeriod() {
     var hour = clock.date.getHours()
@@ -120,15 +132,21 @@ Item {
     }
   }
 
-  PanelWindow {
-    id: panel
+  FloatingWindow {
+    id: window
     visible: root.opened
-    anchors { top: true; bottom: true; left: true; right: true }
+    title: "Solar Forge Dashboard"
+    implicitWidth: 980
+    implicitHeight: 820
+    minimumSize: Qt.size(620, 520)
     color: "#06100f"
-    WlrLayershell.namespace: "solar-forge-dashboard"
-    WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-    exclusionMode: ExclusionMode.Ignore
+
+    // A FloatingWindow is an ordinary desktop window: Hyprland tiles it by
+    // default, and its title bar retains the normal close control. F11 is an
+    // opt-in fullscreen view when a distraction-free dashboard is useful.
+    onVisibleChanged: {
+      if (!visible && !root.closingFromHost) root.dismiss()
+    }
 
     Rectangle { anchors.fill: parent; color: "#06100f" }
     Rectangle {
@@ -171,6 +189,13 @@ Item {
             font.pixelSize: 14
             clip: true
             onAccepted: root.addTodo()
+            Keys.onEscapePressed: root.dismiss()
+            Keys.onPressed: function(event) {
+              if (event.key === Qt.Key_F11) {
+                root.toggleFullscreen()
+                event.accepted = true
+              }
+            }
 
             Text {
               anchors.verticalCenter: parent.verticalCenter
@@ -257,11 +282,19 @@ Item {
           }
         }
       }
-      Text { text: "[ ESC ] dismiss"; color: "#58736d"; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
+      Text { text: "[ ESC ] close   [ F11 ] fullscreen / tiled"; color: "#58736d"; font.family: Style.font.menuFamily; font.pixelSize: 13; anchors.horizontalCenter: parent.horizontalCenter; topPadding: 28 }
     }
     Item {
       id: keyCatcher; anchors.fill: parent; focus: true
-      Keys.onPressed: function(event) { if (event.key === Qt.Key_Escape) { root.dismiss(); event.accepted = true } }
+      Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Escape) {
+          root.dismiss()
+          event.accepted = true
+        } else if (event.key === Qt.Key_F11) {
+          root.toggleFullscreen()
+          event.accepted = true
+        }
+      }
     }
   }
 

@@ -8,7 +8,16 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Live date and time
 - Local persistent to-do list: add tasks with `Enter`, click to complete
 - Up to four recently updated GitHub repositories
-- Fullscreen Omarchy overlay, dismissible with `Escape`
+- Bar-launcher icon for the dashboard
+- Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
+- Optional fullscreen view with `F11`
+
+## Launching
+
+Enable the plugin and use the sun icon in the left section of the Omarchy bar.
+The dashboard opens as a regular window, so it participates in your usual
+Hyprland tiling layout. Press `F11` to switch it to fullscreen and press `F11`
+again to return to the tiled window.
 
 ## GitHub setup
 
