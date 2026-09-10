@@ -150,6 +150,7 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             selectedModule: root.activeModule
+                            animating: root.opened
                             onModuleSelected: root.toggleModule(module)
                             onModuleOpened: root.openModule(module)
                         }
