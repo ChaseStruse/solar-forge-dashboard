@@ -12,6 +12,7 @@ Item {
     property real corePhase: 0
     property int selectedModule: -1
     signal moduleSelected(int module)
+    signal moduleNavigated(int module)
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
     readonly property real chamberSize: Math.min(width, 720)
@@ -34,14 +35,14 @@ Item {
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
                 || event.key === Qt.Key_Right || event.key === Qt.Key_Down
-                || event.key === Qt.Key_Tab) {
-            root.moduleSelected((root.selectedModule + 1) % 2);
+                || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+            root.moduleNavigated((root.selectedModule + 1) % 2);
             event.accepted = true;
         } else if (event.key === Qt.Key_T) {
-            root.moduleSelected(0);
+            if (!event.isAutoRepeat) root.moduleSelected(0);
             event.accepted = true;
         } else if (event.key === Qt.Key_G) {
-            root.moduleSelected(1);
+            if (!event.isAutoRepeat) root.moduleSelected(1);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {

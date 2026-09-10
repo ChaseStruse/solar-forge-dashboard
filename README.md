@@ -11,13 +11,21 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Bar-launcher icon for the dashboard
 - Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
 - Colors automatically follow the active Omarchy theme
-- Proactive daily briefing from explicit local energy and forecast inputs
+- Orbiting app picker with shaded planets, hover pause, and keyboard controls
+- Animated daily briefing from explicit local energy and forecast inputs
 
 ## Launching
 
 Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
+
+The dashboard opens with both panels hidden. While the core has focus, press
+`T` for Objectives or `G` for GitHub; press the same key to hide the panel.
+Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
+Ctrl+Space returns to the core. Clicking a planet toggles its panel;
+double-clicking focuses it. Escape closes the dashboard. Planet icons use
+Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
 
@@ -35,6 +43,11 @@ SOLAR_FORGE_FORECAST="PARTLY CLOUDY // 72°F"
 SOLAR_FORGE_RECOMMENDATION="HOLD BATTERY RESERVE FOR THE EVENING PEAK."
 ```
 
+These are static inputs inherited when the shell starts, not a live solar or
+weather integration. Update them through your shell session's environment and
+restart the shell to reload them. Missing, blank, negative, or non-finite numeric
+values show as unavailable; explicit zero is valid. Savings are displayed in USD.
+
 ## Code structure
 
 - `BarWidget.qml`: launcher and the lifecycle methods Omarchy calls.
@@ -44,6 +57,9 @@ SOLAR_FORGE_RECOMMENDATION="HOLD BATTERY RESERVE FOR THE EVENING PEAK."
 - `TodoSection.qml`: task input and the virtualized three-row list.
 - `GitHubSource.qml`: CLI requests, timeout, response validation, and status.
 - `GitHubSection.qml`: repository presentation.
+- `ForgeCore.qml`: orbital rendering, animation lifecycle, and module controls.
+- `DailyBriefingSource.qml`: validation and display of local briefing inputs.
+- `DailyBriefing.qml`: responsive greeting and recommendation sequence.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.
@@ -67,7 +83,8 @@ git diff --check
 
 The offscreen regression harness tests task persistence/counts/sorting, blank
 input, a 50-task three-row viewport, malformed GitHub responses, and repeatable
-close/reopen state. It uses a fresh database under /tmp and makes no GitHub
+close/reopen state, briefing input validation and replay, module selection,
+and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
 requests. Temporary test output is retained at the path printed by the runner.
 
 For live verification, reload the installed plugin with
