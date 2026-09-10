@@ -95,7 +95,7 @@ Item {
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                 Column {
-                    width: Math.min(page.availableWidth, 1280)
+                    width: Math.min(page.availableWidth, 1560)
                     x: Math.max(0, (page.availableWidth - width) / 2)
                     y: Math.max(0, (page.availableHeight - implicitHeight) / 2)
                     spacing: 16
@@ -146,29 +146,10 @@ Item {
                         readonly property bool compact: width < 780
                         readonly property real branchWidth: compact
                             ? (width - 12) / 2
-                            : Math.min(300, Math.max(180, (width - core.width) / 2 - 28))
+                            : Math.min(400, Math.max(180, (width - core.width) / 2 - 28))
                         height: compact
                             ? core.height + Math.max(tasks.implicitHeight, projects.implicitHeight) + 32
                             : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
-
-                        Rectangle {
-                            visible: !commandDeck.compact && root.activeModule === 0
-                            width: Math.max(0, core.x - (tasks.x + tasks.width) + 32)
-                            height: 1
-                            x: tasks.x + tasks.width - 16
-                            y: commandDeck.height / 2
-                            color: dashboardTheme.accentColor
-                            opacity: root.activeModule === 0 ? 0.7 : 0.14
-                        }
-                        Rectangle {
-                            visible: !commandDeck.compact && root.activeModule === 1
-                            width: Math.max(0, projects.x - (core.x + core.width) + 16)
-                            height: 1
-                            x: core.x + core.width - 16
-                            y: commandDeck.height / 2
-                            color: dashboardTheme.accentColor
-                            opacity: root.activeModule === 1 ? 0.7 : 0.14
-                        }
 
                         ForgeCore {
                             id: core
