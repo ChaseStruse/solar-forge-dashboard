@@ -16,6 +16,7 @@ Item {
         opened = true;
         activeModule = -1;
         github.refresh();
+        briefing.refresh();
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -59,6 +60,9 @@ Item {
     }
     GitHubSource {
         id: github
+    }
+    DailyBriefingSource {
+        id: briefing
     }
     SystemClock {
         id: clock
@@ -131,14 +135,11 @@ Item {
                         color: dashboardTheme.accentColor
                         opacity: 0.3
                     }
-                    Text {
+                    DailyBriefing {
                         width: parent.width
-                        wrapMode: Text.Wrap
-                        text: "SYSTEM ONLINE  ·  AWAITING YOUR NEXT OBJECTIVE"
-                        color: dashboardTheme.urgentColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: 14
-                        font.letterSpacing: 1.5
+                        theme: dashboardTheme
+                        source: briefing
+                        operatorName: root.displayName
                     }
                     Item {
                         id: commandDeck

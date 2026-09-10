@@ -11,6 +11,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Bar-launcher icon for the dashboard
 - Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
 - Colors automatically follow the active Omarchy theme
+- Proactive daily briefing from explicit local energy and forecast inputs
 
 ## Launching
 
@@ -21,6 +22,18 @@ Hyprland tiling layout.
 ## GitHub setup
 
 Solar Forge reads repository metadata through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. If `gh` is unavailable or signed out, the GitHub panel shows an actionable offline status.
+
+## Daily briefing setup
+
+Solar Forge does not infer a location or transmit energy data. Set any of these
+environment variables for the Omarchy shell to populate the report:
+
+```bash
+SOLAR_FORGE_DAILY_GENERATION_KWH=18.4
+SOLAR_FORGE_DAILY_SAVINGS_USD=3.27
+SOLAR_FORGE_FORECAST="PARTLY CLOUDY // 72°F"
+SOLAR_FORGE_RECOMMENDATION="HOLD BATTERY RESERVE FOR THE EVENING PEAK."
+```
 
 ## Code structure
 
