@@ -5,6 +5,7 @@ Column {
     id: root
     required property DashboardTheme theme
     required property GitHubSource source
+    property bool selected: false
 
     spacing: 8
     topPadding: 12
@@ -13,7 +14,7 @@ Column {
         width: parent.width
         wrapMode: Text.Wrap
         text: "GITHUB // " + root.source.status
-        color: root.theme.accentColor
+        color: root.selected ? root.theme.accentColor : root.theme.dimmedTextColor
         font.family: Style.font.menuFamily
         font.pixelSize: 14
         font.letterSpacing: 1.4

@@ -6,6 +6,7 @@ Column {
     id: root
     required property DashboardTheme theme
     required property TodoStore store
+    property bool selected: false
     signal dismissRequested
 
     function focusInput() {
@@ -24,7 +25,7 @@ Column {
         width: parent.width
         wrapMode: Text.Wrap
         text: "TODAY'S OBJECTIVES // " + root.store.remaining + " ACTIVE"
-        color: root.theme.urgentColor
+        color: root.selected ? root.theme.urgentColor : root.theme.dimmedTextColor
         font.family: Style.font.menuFamily
         font.pixelSize: 14
         font.letterSpacing: 1.4
