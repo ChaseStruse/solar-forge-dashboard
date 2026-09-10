@@ -71,6 +71,7 @@ Item {
 
                 Column {
                     width: Math.min(page.availableWidth, 960)
+                    x: Math.max(0, (page.availableWidth - width) / 2)
                     spacing: 16
                     Text {
                         width: parent.width

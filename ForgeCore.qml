@@ -10,7 +10,9 @@ Item {
     property real batteryPercent: 78
     property real gridKw: 0.36
     property real corePhase: 0
-    implicitHeight: 458
+    // The circular chamber begins 30px below the title and the status sits
+    // beneath it, so reserve its full visual footprint in the command deck.
+    implicitHeight: 510
 
     Timer {
         interval: 65
