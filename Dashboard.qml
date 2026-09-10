@@ -48,11 +48,6 @@ Item {
         opened = false;
     }
 
-    function greetingPeriod() {
-        var hour = clock.date.getHours();
-        return hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
-    }
-
     DashboardTheme {
         id: dashboardTheme
     }
@@ -112,15 +107,6 @@ Item {
                         font.family: Style.font.menuFamily
                         font.pixelSize: 14
                         font.letterSpacing: 2.4
-                    }
-                    Text {
-                        width: parent.width
-                        wrapMode: Text.Wrap
-                        text: "Good " + root.greetingPeriod() + ", " + root.displayName + "."
-                        color: dashboardTheme.foregroundColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: Math.min(52, parent.width / 16)
-                        font.bold: true
                     }
                     Text {
                         width: parent.width
