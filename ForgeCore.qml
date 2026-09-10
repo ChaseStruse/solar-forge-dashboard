@@ -158,17 +158,6 @@ Item {
             scale: 0.96 + Math.sin(root.corePhase * 3) * 0.04
         }
         Text {
-            anchors.centerIn: core
-            text: "SOL\nCORE"
-            horizontalAlignment: Text.AlignHCenter
-            color: root.theme.backgroundColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: Math.max(9, chamber.width * 0.036)
-            font.bold: true
-            lineHeight: 0.82
-        }
-
-        Text {
             anchors.left: parent.left
             anchors.leftMargin: parent.width * 0.10
             anchors.verticalCenter: parent.verticalCenter
@@ -181,20 +170,12 @@ Item {
             lineHeight: 1.15
         }
 
-        Rectangle {
-            x: objectivesNode.x + objectivesNode.width * 0.55
-            y: objectivesNode.y + objectivesNode.height / 2
-            width: Math.max(0, core.x - x)
-            height: 1
-            color: root.theme.accentColor
-            opacity: root.selectedModule === 0 ? 0.9 : 0.2
-        }
         Item {
             id: objectivesNode
-            width: parent.width * 0.25
+            width: Math.max(36, parent.width * 0.10)
             height: Math.max(36, parent.width * 0.10)
-            x: parent.width * 0.10
-            y: parent.height * 0.63
+            x: parent.width / 2 + Math.cos(root.corePhase * 0.72 + Math.PI) * parent.width * 0.38 - width / 2
+            y: parent.height / 2 + Math.sin(root.corePhase * 0.72 + Math.PI) * parent.height * 0.38 - height / 2
 
             Rectangle {
                 id: objectivesBeacon
@@ -215,16 +196,6 @@ Item {
                     font.bold: true
                 }
             }
-            Text {
-                anchors.left: objectivesBeacon.right
-                anchors.leftMargin: 7
-                anchors.verticalCenter: parent.verticalCenter
-                text: "OBJECTIVES"
-                color: root.selectedModule === 0 ? root.theme.foregroundColor : root.theme.dimmedTextColor
-                font.family: Style.font.menuFamily
-                font.pixelSize: Math.max(9, chamber.width * 0.027)
-                font.letterSpacing: 0.7
-            }
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
@@ -235,20 +206,12 @@ Item {
             }
         }
 
-        Rectangle {
-            x: core.x + core.width
-            y: githubNode.y + githubNode.height / 2
-            width: Math.max(0, githubNode.x + githubNode.width * 0.45 - x)
-            height: 1
-            color: root.theme.accentColor
-            opacity: root.selectedModule === 1 ? 0.9 : 0.2
-        }
         Item {
             id: githubNode
-            width: parent.width * 0.25
+            width: Math.max(36, parent.width * 0.10)
             height: Math.max(36, parent.width * 0.10)
-            x: parent.width * 0.65
-            y: parent.height * 0.63
+            x: parent.width / 2 + Math.cos(root.corePhase * 0.72) * parent.width * 0.38 - width / 2
+            y: parent.height / 2 + Math.sin(root.corePhase * 0.72) * parent.height * 0.38 - height / 2
 
             Rectangle {
                 id: githubBeacon
@@ -268,16 +231,6 @@ Item {
                     font.family: Style.font.menuFamily
                     font.bold: true
                 }
-            }
-            Text {
-                anchors.right: githubBeacon.left
-                anchors.rightMargin: 7
-                anchors.verticalCenter: parent.verticalCenter
-                text: "GITHUB INTEL"
-                color: root.selectedModule === 1 ? root.theme.foregroundColor : root.theme.dimmedTextColor
-                font.family: Style.font.menuFamily
-                font.pixelSize: Math.max(9, chamber.width * 0.027)
-                font.letterSpacing: 0.7
             }
             MouseArea {
                 anchors.fill: parent
