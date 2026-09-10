@@ -13,6 +13,7 @@ Item {
     property int selectedModule: -1
     signal moduleSelected(int module)
     signal moduleOpened(int module)
+    readonly property real orbitTilt: 0.42
     readonly property real chamberSize: Math.min(width, 560)
     // The circular chamber begins 30px below the title and the status sits
     // beneath it, so reserve its full visual footprint in the command deck.
@@ -21,6 +22,14 @@ Item {
 
     function focusPicker() {
         forceActiveFocus();
+    }
+
+    function orbitX(angle, radius) {
+        return chamber.width / 2 + Math.cos(angle) * radius;
+    }
+
+    function orbitY(angle, radius) {
+        return chamber.height / 2 + Math.sin(angle) * radius * orbitTilt;
     }
 
     Keys.onPressed: function(event) {
@@ -72,6 +81,20 @@ Item {
         border.color: root.theme.borderColor
         border.width: 1
 
+        Repeater {
+            model: 36
+            delegate: Rectangle {
+                required property int index
+                width: index % 7 === 0 ? 3 : 1
+                height: width
+                radius: width / 2
+                x: ((index * 47) % 97) / 100 * parent.width
+                y: ((index * 71) % 89) / 100 * parent.height
+                color: root.theme.foregroundColor
+                opacity: 0.08 + (Math.sin(root.corePhase * 2 + index) + 1) * 0.08
+            }
+        }
+
         Rectangle {
             width: parent.width * 0.86
             height: width
@@ -82,6 +105,11 @@ Item {
             border.width: 1
             opacity: 0.16
             rotation: root.corePhase * 5
+            transform: Scale {
+                origin.x: parent.width / 2
+                origin.y: parent.height / 2
+                yScale: root.orbitTilt
+            }
         }
         Rectangle {
             width: parent.width * 0.67
@@ -93,6 +121,11 @@ Item {
             border.width: 1
             opacity: 0.25
             rotation: -root.corePhase * 9
+            transform: Scale {
+                origin.x: parent.width / 2
+                origin.y: parent.height / 2
+                yScale: root.orbitTilt
+            }
         }
         Rectangle {
             width: parent.width * 0.48
@@ -104,6 +137,11 @@ Item {
             border.width: 1
             opacity: 0.38
             rotation: root.corePhase * 12
+            transform: Scale {
+                origin.x: parent.width / 2
+                origin.y: parent.height / 2
+                yScale: root.orbitTilt
+            }
         }
 
         Rectangle {
@@ -128,8 +166,8 @@ Item {
                 width: 7
                 height: width
                 radius: width / 2
-                x: chamber.width / 2 + Math.cos(root.corePhase * 2 + index * Math.PI / 2) * chamber.width * 0.31 - width / 2
-                y: chamber.height / 2 + Math.sin(root.corePhase * 2 + index * Math.PI / 2) * chamber.height * 0.31 - height / 2
+                x: root.orbitX(root.corePhase * 2 + index * Math.PI / 2, chamber.width * 0.31) - width / 2
+                y: root.orbitY(root.corePhase * 2 + index * Math.PI / 2, chamber.width * 0.31) - height / 2
                 color: root.theme.accentColor
                 opacity: 0.6 + Math.sin(root.corePhase * 4 + index) * 0.25
             }
@@ -137,32 +175,41 @@ Item {
 
         Rectangle {
             id: glow
-            width: parent.width * 0.34
+            width: parent.width * 0.46
             height: width
             radius: width / 2
             anchors.centerIn: parent
             color: root.theme.accentColor
-            opacity: 0.12 + Math.sin(root.corePhase * 3) * 0.04
-            scale: 0.9 + Math.sin(root.corePhase * 3) * 0.05
+            opacity: 0.08 + Math.sin(root.corePhase * 3) * 0.03
+            scale: 0.9 + Math.sin(root.corePhase * 3) * 0.06
+        }
+        Rectangle {
+            width: parent.width * 0.31
+            height: width
+            radius: width / 2
+            anchors.centerIn: parent
+            color: root.theme.accentColor
+            opacity: 0.20 + Math.sin(root.corePhase * 3 + 1) * 0.05
+            scale: 0.95 + Math.sin(root.corePhase * 3 + 1) * 0.04
         }
         Rectangle {
             id: core
-            width: parent.width * 0.19
+            width: parent.width * 0.17
             height: width
             radius: width / 2
             anchors.centerIn: parent
             color: root.theme.accentColor
             border.color: root.theme.foregroundColor
             border.width: 1
-            opacity: 0.92
+            opacity: 0.95
             scale: 0.96 + Math.sin(root.corePhase * 3) * 0.04
         }
         Item {
             id: objectivesNode
             width: Math.max(36, parent.width * 0.10)
             height: Math.max(36, parent.width * 0.10)
-            x: parent.width / 2 + Math.cos(root.corePhase * 0.72 + Math.PI) * parent.width * 0.38 - width / 2
-            y: parent.height / 2 + Math.sin(root.corePhase * 0.72 + Math.PI) * parent.height * 0.38 - height / 2
+            x: root.orbitX(root.corePhase * 0.72 + Math.PI, parent.width * 0.38) - width / 2
+            y: root.orbitY(root.corePhase * 0.72 + Math.PI, parent.width * 0.38) - height / 2
 
             Rectangle {
                 id: objectivesBeacon
@@ -197,8 +244,8 @@ Item {
             id: githubNode
             width: Math.max(36, parent.width * 0.10)
             height: Math.max(36, parent.width * 0.10)
-            x: parent.width / 2 + Math.cos(root.corePhase * 0.72) * parent.width * 0.38 - width / 2
-            y: parent.height / 2 + Math.sin(root.corePhase * 0.72) * parent.height * 0.38 - height / 2
+            x: root.orbitX(root.corePhase * 0.72, parent.width * 0.38) - width / 2
+            y: root.orbitY(root.corePhase * 0.72, parent.width * 0.38) - height / 2
 
             Rectangle {
                 id: githubBeacon
