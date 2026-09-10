@@ -157,19 +157,6 @@ Item {
             opacity: 0.92
             scale: 0.96 + Math.sin(root.corePhase * 3) * 0.04
         }
-        Text {
-            anchors.left: parent.left
-            anchors.leftMargin: parent.width * 0.10
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset: -parent.height * 0.20
-            text: "ARRAY INPUT\n" + root.productionKw.toFixed(2) + " kW"
-            color: root.theme.foregroundColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: Math.max(10, chamber.width * 0.032)
-            font.bold: true
-            lineHeight: 1.15
-        }
-
         Item {
             id: objectivesNode
             width: Math.max(36, parent.width * 0.10)
@@ -240,29 +227,6 @@ Item {
                 }
                 onDoubleClicked: root.moduleOpened(1)
             }
-        }
-        Text {
-            anchors.right: parent.right
-            anchors.rightMargin: parent.width * 0.10
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.verticalCenterOffset: -parent.height * 0.20
-            text: "BATTERY\n" + Math.round(root.batteryPercent) + "%"
-            horizontalAlignment: Text.AlignRight
-            color: root.theme.foregroundColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: Math.max(10, chamber.width * 0.032)
-            font.bold: true
-            lineHeight: 1.15
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: parent.height * 0.11
-            text: "GRID EXCHANGE  //  " + root.gridKw.toFixed(2) + " kW"
-            color: root.theme.dimmedTextColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: Math.max(9, chamber.width * 0.026)
-            font.letterSpacing: 0.8
         }
     }
 
