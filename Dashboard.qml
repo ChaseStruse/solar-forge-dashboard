@@ -17,6 +17,7 @@ Item {
         activeModule = -1;
         github.refresh();
         briefing.refresh();
+        briefingView.replay();
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -136,6 +137,7 @@ Item {
                         opacity: 0.3
                     }
                     DailyBriefing {
+                        id: briefingView
                         width: parent.width
                         theme: dashboardTheme
                         source: briefing
