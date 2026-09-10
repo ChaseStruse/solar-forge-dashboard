@@ -113,21 +113,66 @@ Item {
                         font.pixelSize: 14
                         font.letterSpacing: 1.5
                     }
-                    ForgeCore {
+                    Item {
+                        id: commandDeck
                         width: parent.width
-                        theme: dashboardTheme
-                    }
-                    TodoSection {
-                        id: tasks
-                        width: parent.width
-                        theme: dashboardTheme
-                        store: todos
-                        onDismissRequested: root.close()
-                    }
-                    GitHubSection {
-                        width: parent.width
-                        theme: dashboardTheme
-                        source: github
+                        readonly property bool compact: width < 780
+                        readonly property real branchWidth: compact
+                            ? (width - 12) / 2
+                            : Math.max(140, (width - core.width) / 2 - 22)
+                        height: compact
+                            ? core.height + Math.max(tasks.implicitHeight, projects.implicitHeight) + 32
+                            : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
+
+                        Rectangle {
+                            visible: !commandDeck.compact
+                            width: Math.max(0, core.x - (tasks.x + tasks.width) + 32)
+                            height: 1
+                            x: tasks.x + tasks.width - 16
+                            y: commandDeck.height / 2
+                            color: dashboardTheme.accentColor
+                            opacity: 0.25
+                        }
+                        Rectangle {
+                            visible: !commandDeck.compact
+                            width: Math.max(0, projects.x - (core.x + core.width) + 16)
+                            height: 1
+                            x: core.x + core.width - 16
+                            y: commandDeck.height / 2
+                            color: dashboardTheme.accentColor
+                            opacity: 0.25
+                        }
+
+                        ForgeCore {
+                            id: core
+                            width: commandDeck.compact
+                                ? Math.min(440, commandDeck.width)
+                                : Math.min(440, commandDeck.width * 0.47)
+                            height: implicitHeight
+                            x: (commandDeck.width - width) / 2
+                            y: 0
+                            theme: dashboardTheme
+                        }
+                        TodoSection {
+                            id: tasks
+                            width: commandDeck.branchWidth
+                            y: commandDeck.compact
+                                ? core.height + 28
+                                : (commandDeck.height - height) / 2
+                            theme: dashboardTheme
+                            store: todos
+                            onDismissRequested: root.close()
+                        }
+                        GitHubSection {
+                            id: projects
+                            width: commandDeck.branchWidth
+                            x: commandDeck.width - width
+                            y: commandDeck.compact
+                                ? core.height + 28
+                                : (commandDeck.height - height) / 2
+                            theme: dashboardTheme
+                            source: github
+                        }
                     }
                     Text {
                         text: "[ ESC ] close"
