@@ -26,7 +26,7 @@ Column {
         wrapMode: Text.Wrap
         text: "TODAY'S OBJECTIVES // " + root.store.remaining + " ACTIVE"
         color: root.selected ? root.theme.urgentColor : root.theme.dimmedTextColor
-        font.family: root.theme.fontFamily
+        font.family: Style.font.menuFamily
         font.pixelSize: 14
         font.letterSpacing: 1.4
     }
@@ -45,7 +45,7 @@ Column {
             anchors.rightMargin: 12
             verticalAlignment: TextInput.AlignVCenter
             color: root.theme.foregroundColor
-            font.family: root.theme.fontFamily
+            font.family: Style.font.menuFamily
             font.pixelSize: 14
             clip: true
             onAccepted: root.submit()
@@ -112,7 +112,7 @@ Column {
                 text: title
                 textFormat: Text.PlainText
                 color: done ? root.theme.faintTextColor : root.theme.foregroundColor
-                font.family: root.theme.fontFamily
+                font.family: Style.font.menuFamily
                 font.pixelSize: 14
                 elide: Text.ElideRight
                 font.strikeout: done
@@ -133,14 +133,14 @@ Column {
         text: root.store.error
         color: root.theme.urgentColor
         wrapMode: Text.Wrap
-        font.family: root.theme.fontFamily
+        font.family: Style.font.menuFamily
     }
 
     Text {
         visible: root.store.model.count === 0
         text: "No objectives queued. Add the first one above."
         color: root.theme.faintTextColor
-        font.family: root.theme.fontFamily
+        font.family: Style.font.menuFamily
         font.pixelSize: 13
     }
 }

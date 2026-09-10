@@ -104,7 +104,7 @@ Item {
                         wrapMode: Text.Wrap
                         text: "SOLAR FORGE // PERSONAL COMMAND CENTER"
                         color: dashboardTheme.accentColor
-                        font.family: dashboardTheme.fontFamily
+                        font.family: Style.font.menuFamily
                         font.pixelSize: 14
                         font.letterSpacing: 2.4
                     }
@@ -113,7 +113,7 @@ Item {
                         wrapMode: Text.Wrap
                         text: "Good " + root.greetingPeriod() + ", " + root.displayName + "."
                         color: dashboardTheme.foregroundColor
-                        font.family: dashboardTheme.fontFamily
+                        font.family: Style.font.menuFamily
                         font.pixelSize: Math.min(52, parent.width / 16)
                         font.bold: true
                     }
@@ -122,7 +122,7 @@ Item {
                         wrapMode: Text.Wrap
                         text: Qt.formatDateTime(clock.date, "dddd, MMMM d, yyyy  //  HH:mm")
                         color: dashboardTheme.dimmedTextColor
-                        font.family: dashboardTheme.fontFamily
+                        font.family: Style.font.menuFamily
                         font.pixelSize: 18
                     }
                     Rectangle {
@@ -136,7 +136,7 @@ Item {
                         wrapMode: Text.Wrap
                         text: "SYSTEM ONLINE  ·  AWAITING YOUR NEXT OBJECTIVE"
                         color: dashboardTheme.urgentColor
-                        font.family: dashboardTheme.fontFamily
+                        font.family: Style.font.menuFamily
                         font.pixelSize: 14
                         font.letterSpacing: 1.5
                     }
@@ -192,7 +192,7 @@ Item {
                     Text {
                         text: "[ ESC ] close"
                         color: dashboardTheme.faintTextColor
-                        font.family: dashboardTheme.fontFamily
+                        font.family: Style.font.menuFamily
                         font.pixelSize: 13
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
