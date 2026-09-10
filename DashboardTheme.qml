@@ -2,6 +2,10 @@ import QtQuick
 import qs.Commons
 
 QtObject {
+    // Solar Forge favors a bitmap-inspired face while the surrounding
+    // Omarchy shell keeps its active system font. Qt falls back gracefully
+    // when Cozette is not installed.
+    readonly property string fontFamily: "CozetteVector"
     // Omarchy's Color singleton reloads these bindings whenever the desktop
     // theme changes, keeping the dashboard aligned with the active palette.
     readonly property color backgroundColor: Color.popups.background

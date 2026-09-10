@@ -212,7 +212,7 @@ Item {
                     anchors.centerIn: parent
                     text: "T"
                     color: root.selectedModule === 0 ? root.theme.backgroundColor : root.theme.accentColor
-                    font.family: Style.font.menuFamily
+                    font.family: root.theme.fontFamily
                     font.bold: true
                 }
             }
@@ -248,7 +248,7 @@ Item {
                     anchors.centerIn: parent
                     text: "G"
                     color: root.selectedModule === 1 ? root.theme.backgroundColor : root.theme.accentColor
-                    font.family: Style.font.menuFamily
+                    font.family: root.theme.fontFamily
                     font.bold: true
                 }
             }
@@ -273,7 +273,7 @@ Item {
                 ? "● GITHUB INTEL SELECTED  //  [ ENTER ] TO FOCUS"
                 : "● SELECT A MODULE  //  [ T ] OBJECTIVES  ·  [ G ] GITHUB"
         color: root.theme.urgentColor
-        font.family: Style.font.menuFamily
+        font.family: root.theme.fontFamily
         font.pixelSize: 11
         font.letterSpacing: 1.3
     }

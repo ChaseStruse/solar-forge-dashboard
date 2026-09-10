@@ -15,7 +15,7 @@ Column {
         wrapMode: Text.Wrap
         text: "GITHUB // " + root.source.status
         color: root.selected ? root.theme.accentColor : root.theme.dimmedTextColor
-        font.family: Style.font.menuFamily
+        font.family: root.theme.fontFamily
         font.pixelSize: 14
         font.letterSpacing: 1.4
     }
@@ -42,14 +42,14 @@ Column {
                     textFormat: Text.PlainText
                     text: modelData.name + (modelData.isPrivate ? "  [PRIVATE]" : "")
                     color: root.theme.foregroundColor
-                    font.family: Style.font.menuFamily
+                    font.family: root.theme.fontFamily
                     font.pixelSize: 14
                 }
                 Text {
                     textFormat: Text.PlainText
                     text: modelData.description || "No description"
                     color: root.theme.dimmedTextColor
-                    font.family: Style.font.menuFamily
+                    font.family: root.theme.fontFamily
                     font.pixelSize: 12
                     elide: Text.ElideRight
                     width: parent.width
