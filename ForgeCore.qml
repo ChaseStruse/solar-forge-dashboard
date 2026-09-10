@@ -14,7 +14,7 @@ Item {
     signal moduleSelected(int module)
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
-    readonly property real chamberSize: Math.min(width, 560)
+    readonly property real chamberSize: Math.min(width, 720)
     // Keep room for the control status beneath the orbit field.
     implicitHeight: chamberSize + 50
     focus: true

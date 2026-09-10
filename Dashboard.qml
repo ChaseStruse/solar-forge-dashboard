@@ -154,8 +154,8 @@ Item {
                         ForgeCore {
                             id: core
                             width: commandDeck.compact
-                                ? Math.min(520, commandDeck.width)
-                                : Math.min(560, commandDeck.width * 0.52)
+                                ? Math.min(620, commandDeck.width)
+                                : Math.min(720, commandDeck.width * 0.55)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
                             y: 0
