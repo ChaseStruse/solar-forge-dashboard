@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import qs.Commons
 
 // Projected solar system: static painted lighting, scene-graph orbital motion.
@@ -226,14 +227,18 @@ Item {
                 }
                 Text {
                     anchors.centerIn: parent
-                    text: planet.index === 0 ? "T" : "G"
-                    color: "#ffffff"
-                    style: Text.Outline
-                    styleColor: "#10141f"
-                    font.family: Style.font.menuFamily
-                    font.pixelSize: Math.max(14, planet.width * 0.3)
-                    font.bold: true
+                    // Font Awesome checklist and GitHub marks in Omarchy's
+                    // bundled Nerd Font; independent of the user's text face.
+                    text: planet.index === 0 ? "\uf0ae" : "\uf09b"
+                    color: "#fff4dc"
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: Math.max(18, planet.width * 0.4)
                 }
+                ToolTip.visible: pointer.containsMouse
+                ToolTip.delay: 350
+                ToolTip.text: planet.index === 0
+                    ? "Objectives · T to toggle · Enter to focus"
+                    : "GitHub Intel · G to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
