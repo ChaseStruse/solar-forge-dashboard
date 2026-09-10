@@ -10,9 +10,36 @@ Item {
     property real batteryPercent: 78
     property real gridKw: 0.36
     property real corePhase: 0
+    property int selectedModule: 0
+    signal moduleSelected(int module)
+    signal moduleOpened(int module)
     // The circular chamber begins 30px below the title and the status sits
     // beneath it, so reserve its full visual footprint in the command deck.
     implicitHeight: 510
+    focus: true
+
+    function focusPicker() {
+        forceActiveFocus();
+    }
+
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
+                || event.key === Qt.Key_Right || event.key === Qt.Key_Down
+                || event.key === Qt.Key_Tab) {
+            root.moduleSelected((root.selectedModule + 1) % 2);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_T) {
+            root.moduleSelected(0);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_G) {
+            root.moduleSelected(1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
+                || event.key === Qt.Key_Space) {
+            root.moduleOpened(root.selectedModule);
+            event.accepted = true;
+        }
+    }
 
     Timer {
         interval: 65
@@ -151,6 +178,114 @@ Item {
             font.bold: true
             lineHeight: 1.15
         }
+
+        Rectangle {
+            x: objectivesNode.x + objectivesNode.width * 0.55
+            y: objectivesNode.y + objectivesNode.height / 2
+            width: Math.max(0, core.x - x)
+            height: 1
+            color: root.theme.accentColor
+            opacity: root.selectedModule === 0 ? 0.9 : 0.2
+        }
+        Item {
+            id: objectivesNode
+            width: parent.width * 0.25
+            height: Math.max(36, parent.width * 0.10)
+            x: parent.width * 0.10
+            y: parent.height * 0.63
+
+            Rectangle {
+                id: objectivesBeacon
+                width: parent.height
+                height: width
+                radius: width / 2
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                color: root.selectedModule === 0 ? root.theme.accentColor : root.theme.surfaceColor
+                border.color: root.theme.accentColor
+                border.width: root.selectedModule === 0 ? 2 : 1
+                scale: root.selectedModule === 0 ? 1.12 : 1
+                Text {
+                    anchors.centerIn: parent
+                    text: "T"
+                    color: root.selectedModule === 0 ? root.theme.backgroundColor : root.theme.accentColor
+                    font.family: Style.font.menuFamily
+                    font.bold: true
+                }
+            }
+            Text {
+                anchors.left: objectivesBeacon.right
+                anchors.leftMargin: 7
+                anchors.verticalCenter: parent.verticalCenter
+                text: "OBJECTIVES"
+                color: root.selectedModule === 0 ? root.theme.foregroundColor : root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: Math.max(9, chamber.width * 0.027)
+                font.letterSpacing: 0.7
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    root.moduleSelected(0);
+                    root.focusPicker();
+                }
+                onDoubleClicked: root.moduleOpened(0)
+            }
+        }
+
+        Rectangle {
+            x: core.x + core.width
+            y: githubNode.y + githubNode.height / 2
+            width: Math.max(0, githubNode.x + githubNode.width * 0.45 - x)
+            height: 1
+            color: root.theme.accentColor
+            opacity: root.selectedModule === 1 ? 0.9 : 0.2
+        }
+        Item {
+            id: githubNode
+            width: parent.width * 0.25
+            height: Math.max(36, parent.width * 0.10)
+            x: parent.width * 0.65
+            y: parent.height * 0.63
+
+            Rectangle {
+                id: githubBeacon
+                width: parent.height
+                height: width
+                radius: width / 2
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                color: root.selectedModule === 1 ? root.theme.accentColor : root.theme.surfaceColor
+                border.color: root.theme.accentColor
+                border.width: root.selectedModule === 1 ? 2 : 1
+                scale: root.selectedModule === 1 ? 1.12 : 1
+                Text {
+                    anchors.centerIn: parent
+                    text: "G"
+                    color: root.selectedModule === 1 ? root.theme.backgroundColor : root.theme.accentColor
+                    font.family: Style.font.menuFamily
+                    font.bold: true
+                }
+            }
+            Text {
+                anchors.right: githubBeacon.left
+                anchors.rightMargin: 7
+                anchors.verticalCenter: parent.verticalCenter
+                text: "GITHUB INTEL"
+                color: root.selectedModule === 1 ? root.theme.foregroundColor : root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: Math.max(9, chamber.width * 0.027)
+                font.letterSpacing: 0.7
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    root.moduleSelected(1);
+                    root.focusPicker();
+                }
+                onDoubleClicked: root.moduleOpened(1)
+            }
+        }
         Text {
             anchors.right: parent.right
             anchors.rightMargin: parent.width * 0.10
@@ -180,7 +315,9 @@ Item {
         anchors.top: chamber.bottom
         anchors.topMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
-        text: "● ENERGY FLOW NOMINAL"
+        text: root.selectedModule === 0
+            ? "● OBJECTIVES SELECTED  //  [ T ]  [ ENTER ]"
+            : "● GITHUB INTEL SELECTED  //  [ G ]  [ ENTER ]"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11

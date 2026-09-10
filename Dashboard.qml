@@ -7,6 +7,7 @@ import qs.Commons
 Item {
     id: root
     property bool opened: false
+    property int activeModule: 0
     readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
     readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
 
@@ -16,8 +17,20 @@ Item {
         github.refresh();
         Qt.callLater(function () {
             if (root.opened)
-                tasks.focusInput();
+                core.focusPicker();
         });
+    }
+
+    function selectModule(module) {
+        activeModule = module;
+    }
+
+    function openModule(module) {
+        selectModule(module);
+        if (module === 0)
+            tasks.focusInput();
+        else
+            projects.forceActiveFocus();
     }
 
     // The bar derives its open state from this property. Closing never calls
@@ -60,6 +73,11 @@ Item {
             anchors.fill: parent
             focus: true
             Keys.onEscapePressed: root.close()
+
+            Shortcut {
+                sequence: "Ctrl+Space"
+                onActivated: core.focusPicker()
+            }
 
             ScrollView {
                 id: page
@@ -133,7 +151,7 @@ Item {
                             x: tasks.x + tasks.width - 16
                             y: commandDeck.height / 2
                             color: dashboardTheme.accentColor
-                            opacity: 0.25
+                            opacity: root.activeModule === 0 ? 0.7 : 0.14
                         }
                         Rectangle {
                             visible: !commandDeck.compact
@@ -142,7 +160,7 @@ Item {
                             x: core.x + core.width - 16
                             y: commandDeck.height / 2
                             color: dashboardTheme.accentColor
-                            opacity: 0.25
+                            opacity: root.activeModule === 1 ? 0.7 : 0.14
                         }
 
                         ForgeCore {
@@ -154,6 +172,9 @@ Item {
                             x: (commandDeck.width - width) / 2
                             y: 0
                             theme: dashboardTheme
+                            selectedModule: root.activeModule
+                            onModuleSelected: root.selectModule(module)
+                            onModuleOpened: root.openModule(module)
                         }
                         TodoSection {
                             id: tasks
@@ -163,6 +184,7 @@ Item {
                                 : (commandDeck.height - height) / 2
                             theme: dashboardTheme
                             store: todos
+                            selected: root.activeModule === 0
                             onDismissRequested: root.close()
                         }
                         GitHubSection {
@@ -174,6 +196,7 @@ Item {
                                 : (commandDeck.height - height) / 2
                             theme: dashboardTheme
                             source: github
+                            selected: root.activeModule === 1
                         }
                     }
                     Text {
