@@ -26,6 +26,10 @@ Item {
         activeModule = module;
     }
 
+    function toggleModule(module) {
+        activeModule = activeModule === module ? -1 : module;
+    }
+
     function openModule(module) {
         if (module < 0)
             return;
@@ -176,7 +180,7 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             selectedModule: root.activeModule
-                            onModuleSelected: root.selectModule(module)
+                            onModuleSelected: root.toggleModule(module)
                             onModuleOpened: root.openModule(module)
                         }
                         TodoSection {
