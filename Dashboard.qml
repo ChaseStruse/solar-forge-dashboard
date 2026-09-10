@@ -7,13 +7,14 @@ import qs.Commons
 Item {
     id: root
     property bool opened: false
-    property int activeModule: 0
+    property int activeModule: -1
     readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
     readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
 
     function open() {
         todos.load();
         opened = true;
+        activeModule = -1;
         github.refresh();
         Qt.callLater(function () {
             if (root.opened)
@@ -26,6 +27,8 @@ Item {
     }
 
     function openModule(module) {
+        if (module < 0)
+            return;
         selectModule(module);
         if (module === 0)
             tasks.focusInput();
@@ -88,7 +91,7 @@ Item {
                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                 Column {
-                    width: Math.min(page.availableWidth, 960)
+                    width: Math.min(page.availableWidth, 1280)
                     x: Math.max(0, (page.availableWidth - width) / 2)
                     y: Math.max(0, (page.availableHeight - implicitHeight) / 2)
                     spacing: 16
@@ -139,13 +142,13 @@ Item {
                         readonly property bool compact: width < 780
                         readonly property real branchWidth: compact
                             ? (width - 12) / 2
-                            : Math.max(140, (width - core.width) / 2 - 22)
+                            : Math.min(300, Math.max(180, (width - core.width) / 2 - 28))
                         height: compact
                             ? core.height + Math.max(tasks.implicitHeight, projects.implicitHeight) + 32
                             : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
 
                         Rectangle {
-                            visible: !commandDeck.compact
+                            visible: !commandDeck.compact && root.activeModule === 0
                             width: Math.max(0, core.x - (tasks.x + tasks.width) + 32)
                             height: 1
                             x: tasks.x + tasks.width - 16
@@ -154,7 +157,7 @@ Item {
                             opacity: root.activeModule === 0 ? 0.7 : 0.14
                         }
                         Rectangle {
-                            visible: !commandDeck.compact
+                            visible: !commandDeck.compact && root.activeModule === 1
                             width: Math.max(0, projects.x - (core.x + core.width) + 16)
                             height: 1
                             x: core.x + core.width - 16
@@ -166,8 +169,8 @@ Item {
                         ForgeCore {
                             id: core
                             width: commandDeck.compact
-                                ? Math.min(440, commandDeck.width)
-                                : Math.min(440, commandDeck.width * 0.47)
+                                ? Math.min(520, commandDeck.width)
+                                : Math.min(560, commandDeck.width * 0.52)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
                             y: 0
@@ -185,6 +188,7 @@ Item {
                             theme: dashboardTheme
                             store: todos
                             selected: root.activeModule === 0
+                            visible: root.activeModule === 0
                             onDismissRequested: root.close()
                         }
                         GitHubSection {
@@ -197,6 +201,7 @@ Item {
                             theme: dashboardTheme
                             source: github
                             selected: root.activeModule === 1
+                            visible: root.activeModule === 1
                         }
                     }
                     Text {

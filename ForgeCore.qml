@@ -10,12 +10,13 @@ Item {
     property real batteryPercent: 78
     property real gridKw: 0.36
     property real corePhase: 0
-    property int selectedModule: 0
+    property int selectedModule: -1
     signal moduleSelected(int module)
     signal moduleOpened(int module)
+    readonly property real chamberSize: Math.min(width, 560)
     // The circular chamber begins 30px below the title and the status sits
     // beneath it, so reserve its full visual footprint in the command deck.
-    implicitHeight: 510
+    implicitHeight: chamberSize + 80
     focus: true
 
     function focusPicker() {
@@ -36,7 +37,8 @@ Item {
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
-            root.moduleOpened(root.selectedModule);
+            if (root.selectedModule >= 0)
+                root.moduleOpened(root.selectedModule);
             event.accepted = true;
         }
     }
@@ -63,7 +65,7 @@ Item {
         anchors.top: parent.top
         anchors.topMargin: 30
         anchors.horizontalCenter: parent.horizontalCenter
-        width: Math.min(parent.width, 440)
+        width: root.chamberSize
         height: width
         radius: width / 2
         color: root.theme.surfaceColor
@@ -316,8 +318,10 @@ Item {
         anchors.topMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
         text: root.selectedModule === 0
-            ? "● OBJECTIVES SELECTED  //  [ T ]  [ ENTER ]"
-            : "● GITHUB INTEL SELECTED  //  [ G ]  [ ENTER ]"
+            ? "● OBJECTIVES SELECTED  //  [ ENTER ] TO FOCUS"
+            : root.selectedModule === 1
+                ? "● GITHUB INTEL SELECTED  //  [ ENTER ] TO FOCUS"
+                : "● SELECT A MODULE  //  [ T ] OBJECTIVES  ·  [ G ] GITHUB"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11
