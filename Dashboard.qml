@@ -113,6 +113,10 @@ Item {
                         font.pixelSize: 14
                         font.letterSpacing: 1.5
                     }
+                    ForgeCore {
+                        width: parent.width
+                        theme: dashboardTheme
+                    }
                     TodoSection {
                         id: tasks
                         width: parent.width
