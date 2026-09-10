@@ -15,9 +15,8 @@ Item {
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
     readonly property real chamberSize: Math.min(width, 560)
-    // The circular chamber begins 30px below the title and the status sits
-    // beneath it, so reserve its full visual footprint in the command deck.
-    implicitHeight: chamberSize + 80
+    // Keep room for the control status beneath the orbit field.
+    implicitHeight: chamberSize + 50
     focus: true
 
     function focusPicker() {
@@ -59,27 +58,14 @@ Item {
         onTriggered: root.corePhase = (root.corePhase + 0.014) % (Math.PI * 2)
     }
 
-    Text {
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: "FORGE CORE"
-        color: root.theme.accentColor
-        font.family: Style.font.menuFamily
-        font.pixelSize: 14
-        font.letterSpacing: 3.2
-    }
-
     Rectangle {
         id: chamber
         anchors.top: parent.top
-        anchors.topMargin: 30
         anchors.horizontalCenter: parent.horizontalCenter
         width: root.chamberSize
         height: width
         radius: width / 2
-        color: root.theme.surfaceColor
-        border.color: root.theme.borderColor
-        border.width: 1
+        color: "transparent"
 
         Repeater {
             model: 36
