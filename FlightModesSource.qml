@@ -92,7 +92,7 @@ QtObject {
     }
 
     readonly property string statusScript: String.raw`
-set -o pipefail
+set -euo pipefail
 idle=$(omarchy toggle idle status | jq -r '.enabled')
 night=$(omarchy toggle nightlight --status | jq -r '.enabled')
 dnd=$(omarchy-shell -q notifications dndState)
