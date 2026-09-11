@@ -141,9 +141,9 @@ Item {
                 c.fillStyle = halo;
                 c.fillRect(0, 0, width, height);
                 var surface = c.createRadialGradient(m-r*0.3, m-r*0.3, 0, m, m, r);
-                surface.addColorStop(0, "#fff9dd");
-                surface.addColorStop(0.45, "#ffe9ab");
-                surface.addColorStop(0.8, Qt.lighter(ink, 1.8));
+                surface.addColorStop(0, Qt.lighter(ink, 2.8));
+                surface.addColorStop(0.42, Qt.lighter(ink, 1.9));
+                surface.addColorStop(0.78, Qt.lighter(ink, 1.35));
                 surface.addColorStop(1, ink);
                 c.beginPath(); c.arc(m, m, r, 0, Math.PI * 2);
                 c.fillStyle = surface; c.fill();
@@ -156,6 +156,8 @@ Item {
             z: 0.1
             rotation: root.corePhase * 360 / (Math.PI * 2)
             opacity: 0.13
+            property color ink: root.theme.accentColor
+            onInkChanged: requestPaint()
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
             onPaint: {
@@ -165,7 +167,7 @@ Item {
                     c.beginPath();
                     c.arc(width/2 + Math.cos(a)*r, height/2 + Math.sin(a)*r,
                           0.7 + i % 3 * 0.4, 0, Math.PI*2);
-                    c.fillStyle = i % 2 ? "#ffffff" : "#7c361e"; c.fill();
+                    c.fillStyle = i % 2 ? Qt.lighter(ink, 2.4) : Qt.darker(ink, 1.5); c.fill();
                 }
             }
         }
@@ -182,7 +184,7 @@ Item {
                 y: root.orbitY(angle, chamber.width * 0.24) - height / 2
                 z: Math.sin(angle) < 0 ? -1 : 1
                 scale: 0.85 + Math.sin(angle) * 0.15
-                color: root.theme.accentColor
+                color: root.theme.secondaryAccentColor
                 opacity: 0.65 + Math.sin(angle) * 0.2
             }
         }
@@ -207,7 +209,7 @@ Item {
                     anchors.margins: -5
                     radius: width / 2
                     color: "transparent"
-                    border.color: root.theme.accentColor
+                    border.color: root.theme.secondaryAccentColor
                     opacity: planet.selected ? 0.9 : pointer.containsMouse ? 0.5 : 0
                     scale: planet.selected ? 1.08 : 1
                     Behavior on opacity { NumberAnimation { duration: 220 } }
@@ -218,7 +220,7 @@ Item {
                     // Rotate the lighting toward the sun; keep the label upright.
                     rotation: Math.atan2(chamber.height/2 - planet.y - planet.height/2,
                                          chamber.width/2 - planet.x - planet.width/2) * 180 / Math.PI
-                    property color ink: root.theme.accentColor
+                    property color ink: root.theme.secondaryAccentColor
                     onInkChanged: requestPaint()
                     onWidthChanged: requestPaint()
                     onHeightChanged: requestPaint()
@@ -238,7 +240,7 @@ Item {
                     // Font Awesome checklist and GitHub marks in Omarchy's
                     // bundled Nerd Font; independent of the user's text face.
                     text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : "󰈐"
-                    color: "#fff4dc"
+                    color: root.theme.foregroundColor
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
                 }

@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons
 
 ShellRoot {
     TodoStore {
@@ -86,6 +87,8 @@ ShellRoot {
                 check(flightModes.powerProfile === "balanced", "power profile updates");
                 check(!flightModes.consumeStatus("bad state"), "reject malformed flight state");
                 check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
+                check(theme.accentColor === Color.accent, "core color follows theme accent");
+                check(theme.secondaryAccentColor === Color.bar.active, "planet color follows theme secondary accent");
                 dashboard.opened = true;
                 dashboard.close();
                 dashboard.close();
