@@ -13,6 +13,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Animated daily briefing from explicit local energy and forecast inputs
+- Mission-control timeline with operational events, weather effects, predicted peak production, maintenance alerts, and autonomous actions
 
 ## Launching
 
@@ -20,8 +21,8 @@ Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
-The dashboard opens with both panels hidden. While the core has focus, press
-`T` for Objectives or `G` for GitHub; press the same key to hide the panel.
+The dashboard opens with all panels hidden. While the core has focus, press
+`T` for Objectives, `G` for GitHub, or `M` for the mission timeline; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
 double-clicking focuses it. Escape closes the dashboard. Planet icons use
@@ -60,6 +61,7 @@ values show as unavailable; explicit zero is valid. Savings are displayed in USD
 - `ForgeCore.qml`: orbital rendering, animation lifecycle, and module controls.
 - `DailyBriefingSource.qml`: validation and display of local briefing inputs.
 - `DailyBriefing.qml`: responsive greeting and recommendation sequence.
+- `MissionTimeline.qml`: operational log with current and predicted plant events.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.

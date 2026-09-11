@@ -36,13 +36,16 @@ Item {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
                 || event.key === Qt.Key_Right || event.key === Qt.Key_Down
                 || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-            root.moduleNavigated((root.selectedModule + 1) % 2);
+            root.moduleNavigated((root.selectedModule + 1) % 3);
             event.accepted = true;
         } else if (event.key === Qt.Key_T) {
             if (!event.isAutoRepeat) root.moduleSelected(0);
             event.accepted = true;
         } else if (event.key === Qt.Key_G) {
             if (!event.isAutoRepeat) root.moduleSelected(1);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_M) {
+            if (!event.isAutoRepeat) root.moduleSelected(2);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
@@ -181,11 +184,11 @@ Item {
         }
 
         Repeater {
-            model: 2
+            model: 3
             Item {
                 id: planet
                 required property int index
-                readonly property real angle: root.corePhase + (index === 0 ? Math.PI : 0)
+                readonly property real angle: root.corePhase + index * Math.PI * 2 / 3
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
                 width: Math.max(44, chamber.width * 0.078)
@@ -230,7 +233,7 @@ Item {
                     anchors.centerIn: parent
                     // Font Awesome checklist and GitHub marks in Omarchy's
                     // bundled Nerd Font; independent of the user's text face.
-                    text: planet.index === 0 ? "\uf0ae" : "\uf09b"
+                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : "\uf017"
                     color: "#fff4dc"
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
@@ -239,7 +242,9 @@ Item {
                 ToolTip.delay: 350
                 ToolTip.text: planet.index === 0
                     ? "Objectives · T to toggle · Enter to focus"
-                    : "GitHub Intel · G to toggle · Enter to focus"
+                    : planet.index === 1
+                        ? "GitHub Intel · G to toggle · Enter to focus"
+                        : "Mission timeline · M to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
@@ -264,7 +269,9 @@ Item {
             ? "● OBJECTIVES SELECTED  //  [ ENTER ] TO FOCUS"
             : root.selectedModule === 1
                 ? "● GITHUB INTEL SELECTED  //  [ ENTER ] TO FOCUS"
-                : "● SELECT A MODULE  //  [ T ] OBJECTIVES  ·  [ G ] GITHUB"
+                : root.selectedModule === 2
+                    ? "● MISSION TIMELINE SELECTED  //  [ ENTER ] TO FOCUS"
+                    : "● SELECT A MODULE  //  [ T ] OBJECTIVES  ·  [ G ] GITHUB  ·  [ M ] TIMELINE"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11

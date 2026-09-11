@@ -14,8 +14,9 @@ Item {
     function open() {
         todos.load();
         opened = true;
-        activeModule = -1;
+        activeModule = 2;
         github.refresh();
+        missionSource.refresh();
         briefingView.replay();
         Qt.callLater(function () {
             if (root.opened)
@@ -24,22 +25,22 @@ Item {
     }
 
     function selectModule(module) {
-        if (module === 0 || module === 1)
+        if (module >= 0 && module <= 2)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module === 0 || module === 1)
+        if (module >= 0 && module <= 2)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module !== 0 && module !== 1)
+        if (module < 0 || module > 2)
             return;
         selectModule(module);
         if (module === 0)
             tasks.focusInput();
-        else
+        else if (module === 1)
             projects.forceActiveFocus();
     }
 
@@ -57,6 +58,9 @@ Item {
     }
     GitHubSource {
         id: github
+    }
+    MissionControlSource {
+        id: missionSource
     }
     DailyBriefingSource {
         id: briefing
@@ -139,9 +143,12 @@ Item {
                         readonly property real branchWidth: compact
                             ? (width - 12) / 2
                             : Math.min(400, Math.max(180, (width - core.width) / 2 - 28))
-                        height: compact
+                        height: root.activeModule === 2
+                            ? missionLog.implicitHeight
+                            : compact
                             ? core.height + (root.activeModule === -1 ? 0
-                                : (root.activeModule === 0 ? tasks.implicitHeight : projects.implicitHeight) + 32)
+                                : (root.activeModule === 0 ? tasks.implicitHeight
+                                    : root.activeModule === 1 ? projects.implicitHeight : missionLog.implicitHeight) + 32)
                             : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
 
                         ForgeCore {
@@ -154,7 +161,8 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             selectedModule: root.activeModule
-                            animating: root.opened
+                            animating: root.opened && visible
+                            visible: root.activeModule !== 2
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -182,6 +190,17 @@ Item {
                             source: github
                             selected: root.activeModule === 1
                             visible: root.activeModule === 1
+                        }
+                        MissionTimeline {
+                            id: missionLog
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
+                            theme: dashboardTheme
+                            source: missionSource
+                            selected: root.activeModule === 2
+                            visible: root.activeModule === 2
+                            onDismissRequested: root.close()
                         }
                     }
                     Text {
