@@ -103,6 +103,11 @@ ShellRoot {
                 check(!workspaceRadar.focusWindow("bad-address"), "reject invalid window action");
                 check(workspaceRadar.workspaceActionCode(2) === 'hl.dsp.focus({ workspace = "2" })', "build Lua workspace action");
                 check(workspaceRadar.windowActionCode("0xabc") === 'hl.dsp.focus({ window = "address:0xabc" })', "build Lua window action");
+                check(workspaceRadar.moveWindowActionCode("0xabc", 2) === 'hl.dsp.window.move({ workspace = "2", window = "address:0xabc", follow = false })', "build Lua window move action");
+                check(workspaceRadar.closeWindowActionCode("0xabc") === 'hl.dsp.window.close({ window = "address:0xabc" })', "build Lua window close action");
+                check(workspaceRadar.workspaces[0].role === "FORGE", "infer workspace role");
+                check(!workspaceRadar.moveWindow("bad-address", 2), "reject invalid move action");
+                check(!workspaceRadar.closeWindow("bad-address"), "reject invalid close action");
                 check(!workspaceRadar.consume("bad state", "[]", "{}"), "reject malformed workspace state");
                 check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
                 check(theme.accentColor === Color.accent, "core color follows theme accent");

@@ -14,7 +14,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Mission Control with recent GitHub activity and live Omarchy weather
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
-- Workspace Radar maps active Hyprland workspaces to planets and their windows to clickable moons, with focus glow and urgent distress pulses
+- Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
 
 ## Launching
 

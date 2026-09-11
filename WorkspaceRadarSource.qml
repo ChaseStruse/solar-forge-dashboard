@@ -17,6 +17,7 @@ QtObject {
     property string lastClientRaw: ""
     property string lastActiveRaw: ""
     readonly property bool loading: workspaceProcess.running || clientProcess.running || activeProcess.running
+    readonly property bool actionRunning: operationProcess.running
 
     function refresh() {
         if (loading)
@@ -107,11 +108,19 @@ QtObject {
                             address: String(client.address || ""),
                             title: String(client.title || "Untitled window"),
                             app: String(client.class || client.initialClass || "application"),
+                            workspaceId: id,
                             urgent: client.urgent === true || isUrgent(client.address)
                         });
                     }
                 }
-                result.push({ id: id, name: String(item.name || id), windows: moons, urgent: hasUrgent });
+                result.push({
+                    id: id,
+                    name: String(item.name || id),
+                    windows: moons,
+                    urgent: hasUrgent,
+                    fullscreen: item.hasfullscreen === true,
+                    role: workspaceRole(moons)
+                });
             }
             result.sort(function(a, b) { return a.id - b.id; });
             lastWorkspaceRaw = String(workspaceRaw);
@@ -125,6 +134,24 @@ QtObject {
             status = "HYPRLAND RADAR RESPONSE UNREADABLE";
             return false;
         }
+    }
+
+    function workspaceRole(windows) {
+        var kinds = [];
+        for (var i = 0; i < windows.length; i++)
+            kinds.push(String(windows[i].app || "").toLowerCase());
+        var joined = kinds.join(" ");
+        if (/code|cursor|zed|jetbrains|terminal|foot|kitty|alacritty/.test(joined))
+            return "FORGE";
+        if (/firefox|chrom|brave|zen|browser/.test(joined))
+            return "WEB";
+        if (/discord|slack|signal|telegram|teams/.test(joined))
+            return "COMMS";
+        if (/spotify|vlc|mpv|music/.test(joined))
+            return "MEDIA";
+        if (/obsidian|libreoffice|writer|calc/.test(joined))
+            return "ARCHIVE";
+        return windows.length ? "GENERAL" : "VACANT";
     }
 
     function focusWorkspace(workspaceId) {
@@ -156,6 +183,45 @@ QtObject {
         if (!/^0x[0-9a-fA-F]+$/.test(target))
             return "";
         return "hl.dsp.focus({ window = \"address:" + target + "\" })";
+    }
+
+    function moveWindow(address, workspaceId) {
+        var code = moveWindowActionCode(address, workspaceId);
+        if (!code || operationProcess.running)
+            return false;
+        status = "REASSIGNING APPLICATION ORBIT…";
+        operationProcess.successStatus = "APPLICATION ORBIT REASSIGNED";
+        operationProcess.failureStatus = "ORBIT REASSIGNMENT FAILED";
+        operationProcess.command = ["hyprctl", "dispatch", code];
+        operationProcess.running = true;
+        return true;
+    }
+
+    function moveWindowActionCode(address, workspaceId) {
+        var target = String(address || "");
+        var id = Number(workspaceId);
+        if (!/^0x[0-9a-fA-F]+$/.test(target) || !isFinite(id) || id <= 0)
+            return "";
+        return "hl.dsp.window.move({ workspace = \"" + Math.floor(id) + "\", window = \"address:" + target + "\", follow = false })";
+    }
+
+    function closeWindow(address) {
+        var code = closeWindowActionCode(address);
+        if (!code || operationProcess.running)
+            return false;
+        status = "TERMINATING APPLICATION SIGNAL…";
+        operationProcess.successStatus = "APPLICATION SIGNAL TERMINATED";
+        operationProcess.failureStatus = "APPLICATION TERMINATION FAILED";
+        operationProcess.command = ["hyprctl", "dispatch", code];
+        operationProcess.running = true;
+        return true;
+    }
+
+    function closeWindowActionCode(address) {
+        var target = String(address || "");
+        if (!/^0x[0-9a-fA-F]+$/.test(target))
+            return "";
+        return "hl.dsp.window.close({ window = \"address:" + target + "\" })";
     }
 
     readonly property Timer deadline: Timer {
@@ -193,6 +259,14 @@ QtObject {
         onExited: {
             root.status = exitCode === 0 ? "APPLICATION SIGNAL ACQUIRED" : "APPLICATION FOCUS FAILED";
             if (exitCode === 0) refreshDelay.restart();
+        }
+    }
+    readonly property Process operationProcess: Process {
+        property string successStatus: "OPERATION COMPLETE"
+        property string failureStatus: "OPERATION FAILED"
+        onExited: {
+            root.status = exitCode === 0 ? successStatus : failureStatus;
+            refreshDelay.restart();
         }
     }
     readonly property Process eventProcess: Process {
