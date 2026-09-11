@@ -130,18 +130,32 @@ QtObject {
     function focusWorkspace(workspaceId) {
         if (!isFinite(Number(workspaceId)) || Number(workspaceId) <= 0)
             return false;
-        workspaceAction.command = ["hyprctl", "dispatch", "workspace", String(workspaceId)];
+        workspaceAction.command = ["hyprctl", "dispatch", workspaceActionCode(workspaceId)];
         workspaceAction.running = true;
         return true;
+    }
+
+    function workspaceActionCode(workspaceId) {
+        var id = Number(workspaceId);
+        if (!isFinite(id) || id <= 0)
+            return "";
+        return "hl.dsp.focus({ workspace = \"" + Math.floor(id) + "\" })";
     }
 
     function focusWindow(address) {
         var target = String(address || "");
         if (!/^0x[0-9a-fA-F]+$/.test(target))
             return false;
-        windowAction.command = ["hyprctl", "dispatch", "focuswindow", "address:" + target];
+        windowAction.command = ["hyprctl", "dispatch", windowActionCode(target)];
         windowAction.running = true;
         return true;
+    }
+
+    function windowActionCode(address) {
+        var target = String(address || "");
+        if (!/^0x[0-9a-fA-F]+$/.test(target))
+            return "";
+        return "hl.dsp.focus({ window = \"address:" + target + "\" })";
     }
 
     readonly property Timer deadline: Timer {
