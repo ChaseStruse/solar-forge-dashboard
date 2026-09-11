@@ -4,15 +4,15 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 ## Current features
 
-- Personalized greeting from the local user account
 - Live date and time
 - Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
 - Up to four GitHub repositories returned by `gh repo list`
 - Bar-launcher icon for the dashboard
-- Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
+- Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
-- Animated daily briefing from explicit local energy and forecast inputs
+- Mission Control with recent GitHub activity and live Omarchy weather
+- Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 
 ## Launching
 
@@ -20,33 +20,17 @@ Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
-The dashboard opens with both panels hidden. While the core has focus, press
-`T` for Objectives or `G` for GitHub; press the same key to hide the panel.
+The dashboard opens with all panels hidden. While the core has focus, press
+`T` for Objectives, `G` for GitHub, or `M` for the mission timeline; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
-double-clicking focuses it. Escape closes the dashboard. Planet icons use
+double-clicking focuses it. Escape minimizes the active module and returns
+focus to the orbital picker. Planet icons use
 Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
 
 Solar Forge reads repository metadata through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. If `gh` is unavailable or signed out, the GitHub panel shows an actionable offline status.
-
-## Daily briefing setup
-
-Solar Forge does not infer a location or transmit energy data. Set any of these
-environment variables for the Omarchy shell to populate the report:
-
-```bash
-SOLAR_FORGE_DAILY_GENERATION_KWH=18.4
-SOLAR_FORGE_DAILY_SAVINGS_USD=3.27
-SOLAR_FORGE_FORECAST="PARTLY CLOUDY // 72°F"
-SOLAR_FORGE_RECOMMENDATION="HOLD BATTERY RESERVE FOR THE EVENING PEAK."
-```
-
-These are static inputs inherited when the shell starts, not a live solar or
-weather integration. Update them through your shell session's environment and
-restart the shell to reload them. Missing, blank, negative, or non-finite numeric
-values show as unavailable; explicit zero is valid. Savings are displayed in USD.
 
 ## Code structure
 
@@ -58,8 +42,11 @@ values show as unavailable; explicit zero is valid. Savings are displayed in USD
 - `GitHubSource.qml`: CLI requests, timeout, response validation, and status.
 - `GitHubSection.qml`: repository presentation.
 - `ForgeCore.qml`: orbital rendering, animation lifecycle, and module controls.
-- `DailyBriefingSource.qml`: validation and display of local briefing inputs.
-- `DailyBriefing.qml`: responsive greeting and recommendation sequence.
+- `MissionControlSource.qml`: GitHub activity and Omarchy weather requests.
+- `MissionTimeline.qml`: the live GitHub and weather command surface.
+- `TimelineLane.qml`: shared timeline presentation for source events.
+- `SystemBriefingSource.qml`: local system-health collection and recommendations.
+- `SystemBriefing.qml`: the cinematic startup and replay briefing.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.
@@ -83,13 +70,12 @@ git diff --check
 
 The offscreen regression harness tests task persistence/counts/sorting, blank
 input, a 50-task three-row viewport, malformed GitHub responses, and repeatable
-close/reopen state, briefing input validation and replay, module selection,
-and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
+close/reopen state, module selection, and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
 requests. Temporary test output is retained at the path printed by the runner.
 
 For live verification, reload the installed plugin with
 `omarchy-shell shell rescanPlugins`, open/close it from the bar, test Escape
-while typing, and check a short tiled window and the scrollbar. The offscreen
+while typing returns focus to the core, and check a short tiled window and the scrollbar. The offscreen
 checks do not replace compositor or pointer/keyboard interaction checks.
 
 ## Recommended next steps

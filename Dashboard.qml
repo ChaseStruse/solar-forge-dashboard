@@ -8,15 +8,19 @@ Item {
     id: root
     property bool opened: false
     property int activeModule: -1
-    readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
-    readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
+    property bool briefingShown: false
 
     function open() {
         todos.load();
         opened = true;
         activeModule = -1;
         github.refresh();
-        briefingView.replay();
+        missionSource.refresh();
+        if (!briefingShown) {
+            briefingShown = true;
+            systemSource.refresh();
+            Qt.callLater(function() { systemBriefing.play(); });
+        }
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -24,22 +28,22 @@ Item {
     }
 
     function selectModule(module) {
-        if (module === 0 || module === 1)
+        if (module >= 0 && module <= 2)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module === 0 || module === 1)
+        if (module >= 0 && module <= 2)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module !== 0 && module !== 1)
+        if (module < 0 || module > 2)
             return;
         selectModule(module);
         if (module === 0)
             tasks.focusInput();
-        else
+        else if (module === 1)
             projects.forceActiveFocus();
     }
 
@@ -47,6 +51,11 @@ Item {
     // back into shell.hide(), so all close paths are idempotent.
     function close() {
         opened = false;
+    }
+
+    function releaseFocus() {
+        activeModule = -1;
+        core.focusPicker();
     }
 
     DashboardTheme {
@@ -58,8 +67,11 @@ Item {
     GitHubSource {
         id: github
     }
-    DailyBriefingSource {
-        id: briefing
+    MissionControlSource {
+        id: missionSource
+    }
+    SystemBriefingSource {
+        id: systemSource
     }
     SystemClock {
         id: clock
@@ -80,7 +92,7 @@ Item {
         FocusScope {
             anchors.fill: parent
             focus: true
-            Keys.onEscapePressed: root.close()
+            Keys.onEscapePressed: root.releaseFocus()
 
             Shortcut {
                 sequence: "Ctrl+Space"
@@ -123,44 +135,40 @@ Item {
                         color: dashboardTheme.accentColor
                         opacity: 0.3
                     }
-                    DailyBriefing {
-                        id: briefingView
-                        width: parent.width
-                        theme: dashboardTheme
-                        source: briefing
-                        operatorName: root.displayName
-                        active: root.opened
-                        hour: clock.date.getHours()
-                    }
                     Item {
                         id: commandDeck
                         width: parent.width
                         readonly property bool compact: width < 780
                         readonly property real branchWidth: compact
-                            ? (width - 12) / 2
-                            : Math.min(400, Math.max(180, (width - core.width) / 2 - 28))
-                        height: compact
+                            ? width
+                            : Math.min(280, width * 0.29)
+                        height: root.activeModule === 2
+                            ? missionLog.implicitHeight
+                            : compact
                             ? core.height + (root.activeModule === -1 ? 0
-                                : (root.activeModule === 0 ? tasks.implicitHeight : projects.implicitHeight) + 32)
+                                : (root.activeModule === 0 ? tasks.implicitHeight
+                                    : root.activeModule === 1 ? projects.implicitHeight : missionLog.implicitHeight) + 32)
                             : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
 
                         ForgeCore {
                             id: core
                             width: commandDeck.compact
                                 ? Math.min(620, commandDeck.width)
-                                : Math.min(720, commandDeck.width * 0.55)
+                                : Math.min(860, commandDeck.width * 0.82)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
                             y: 0
                             theme: dashboardTheme
                             selectedModule: root.activeModule
-                            animating: root.opened
+                            animating: root.opened && visible
+                            visible: root.activeModule !== 2
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
                         }
                         TodoSection {
                             id: tasks
+                            z: 2
                             width: commandDeck.branchWidth
                             y: commandDeck.compact
                                 ? core.height + 28
@@ -169,10 +177,11 @@ Item {
                             store: todos
                             selected: root.activeModule === 0
                             visible: root.activeModule === 0
-                            onDismissRequested: root.close()
+                            onDismissRequested: root.releaseFocus()
                         }
                         GitHubSection {
                             id: projects
+                            z: 2
                             width: commandDeck.branchWidth
                             x: commandDeck.width - width
                             y: commandDeck.compact
@@ -183,15 +192,44 @@ Item {
                             selected: root.activeModule === 1
                             visible: root.activeModule === 1
                         }
+                        MissionTimeline {
+                            id: missionLog
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
+                            theme: dashboardTheme
+                            source: missionSource
+                            selected: root.activeModule === 2
+                            visible: root.activeModule === 2
+                            onDismissRequested: root.releaseFocus()
+                            onReplayBriefing: {
+                                systemSource.refresh();
+                                systemBriefing.play();
+                            }
+                        }
                     }
                     Text {
-                        text: "[ ESC ] close"
+                        text: "[ ESC ] return focus to core"
                         color: dashboardTheme.faintTextColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 13
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
+            }
+            AmbientLayer {
+                anchors.fill: parent
+                visible: root.opened
+                z: 10
+            }
+            SystemBriefing {
+                id: systemBriefing
+                anchors.fill: parent
+                theme: dashboardTheme
+                source: systemSource
+                missionSource: missionSource
+                objectiveCount: todos.remaining
+                onBriefingDismissed: Qt.callLater(function() { core.focusPicker(); })
             }
         }
     }

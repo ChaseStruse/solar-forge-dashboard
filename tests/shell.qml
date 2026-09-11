@@ -24,15 +24,6 @@ ShellRoot {
         theme: theme
         store: store
     }
-    DailyBriefingSource { id: briefingSource }
-    DailyBriefing {
-        id: briefing
-        width: 300
-        theme: theme
-        source: briefingSource
-        operatorName: "<b>Operator</b>"
-        active: true
-    }
     ForgeCore {
         id: core
         width: 500
@@ -82,10 +73,6 @@ ShellRoot {
                 dashboard.opened = true;
                 check(dashboard.opened, "reopen");
                 dashboard.close();
-                for (var value of [undefined, null, "", "  ", "bad", "-1", "Infinity"])
-                    check(isNaN(briefingSource.parseReading(value)), "invalid reading must be unavailable");
-                check(briefingSource.parseReading("0") === 0, "zero is a valid reading");
-                check(briefingSource.parseReading(" 18.4 ") === 18.4, "numeric reading");
                 dashboard.activeModule = -1;
                 core.moduleSelected(0);
                 check(dashboard.activeModule === 0, "toggle opens Objectives");
@@ -96,13 +83,6 @@ ShellRoot {
                 check(dashboard.activeModule === 1, "navigation selects without toggling closed");
                 dashboard.openModule(42);
                 check(dashboard.activeModule === 1, "invalid module ignored");
-                briefing.hour = 8;
-                check(briefing.greetingText.indexOf("Good morning") === 0, "morning greeting");
-                briefing.hour = 14;
-                check(briefing.greetingText.indexOf("Good afternoon") === 0, "afternoon greeting");
-                briefing.messageIndex = 1;
-                briefing.replay();
-                check(briefing.messageIndex === 0, "briefing replay resets");
                 core.animating = true;
                 lifecycle.start();
             } catch (failure) {
@@ -132,11 +112,6 @@ ShellRoot {
                     held = core.corePhase;
                 } else if (step === 3) {
                     check(core.corePhase === held, "hidden orbit is paused");
-                } else if (step === 6) {
-                    check(briefing.messageIndex === 1, "briefing advances");
-                    briefing.replay();
-                    check(briefing.messageIndex === 0, "reopen resets greeting");
-                    briefing.active = false;
                     console.log("SOLAR_FORGE_TESTS_PASSED");
                     Qt.quit();
                 }
