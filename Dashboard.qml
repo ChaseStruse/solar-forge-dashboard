@@ -126,8 +126,8 @@ Item {
                         width: parent.width
                         readonly property bool compact: width < 780
                         readonly property real branchWidth: compact
-                            ? (width - 12) / 2
-                            : Math.min(400, Math.max(180, (width - core.width) / 2 - 28))
+                            ? width
+                            : Math.min(280, width * 0.29)
                         height: root.activeModule === 2
                             ? missionLog.implicitHeight
                             : compact
@@ -140,9 +140,7 @@ Item {
                             id: core
                             width: commandDeck.compact
                                 ? Math.min(620, commandDeck.width)
-                                : root.activeModule === -1
-                                    ? Math.min(860, commandDeck.width * 0.82)
-                                    : Math.min(720, commandDeck.width * 0.55)
+                                : Math.min(860, commandDeck.width * 0.82)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
                             y: 0
@@ -156,6 +154,7 @@ Item {
                         }
                         TodoSection {
                             id: tasks
+                            z: 2
                             width: commandDeck.branchWidth
                             y: commandDeck.compact
                                 ? core.height + 28
@@ -168,6 +167,7 @@ Item {
                         }
                         GitHubSection {
                             id: projects
+                            z: 2
                             width: commandDeck.branchWidth
                             x: commandDeck.width - width
                             y: commandDeck.compact
