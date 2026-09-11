@@ -22,6 +22,9 @@ ShellRoot {
     FlightModesSource {
         id: flightModes
     }
+    WorkspaceRadarSource {
+        id: workspaceRadar
+    }
     FlightModesSection {
         id: flightModesSection
         width: 800
@@ -86,6 +89,19 @@ ShellRoot {
                 check(flightModes.stayAwake && flightModes.doNotDisturb && !flightModes.nightlight, "flight booleans update");
                 check(flightModes.powerProfile === "balanced", "power profile updates");
                 check(!flightModes.consumeStatus("bad state"), "reject malformed flight state");
+                check(workspaceRadar.consume('[{"id":2,"name":"2","windows":2},{"id":1,"name":"dev","windows":1},{"id":-99,"name":"special:scratch"}]', '[{"address":"0xabc","class":"foot","title":"Terminal","workspace":{"id":1},"urgent":false},{"address":"0xdef","class":"firefox","title":"Alert","workspace":{"id":2},"urgent":true}]', '{"id":2}'), "parse workspace topology");
+                check(workspaceRadar.workspaces.length === 2, "ignore special workspaces");
+                check(workspaceRadar.workspaces[0].id === 1, "sort workspace planets");
+                check(workspaceRadar.workspaces[1].windows.length === 1, "attach window moons");
+                check(workspaceRadar.workspaces[1].urgent, "propagate urgent distress state");
+                check(workspaceRadar.focusedWorkspaceId === 2, "track focused workspace");
+                workspaceRadar.handleEvent("urgent>>0xabc");
+                check(workspaceRadar.workspaces[0].urgent, "track urgent event signal");
+                workspaceRadar.handleEvent("activewindowv2>>0xabc");
+                check(!workspaceRadar.workspaces[0].urgent, "clear distress when focused");
+                check(!workspaceRadar.focusWorkspace(-1), "reject invalid workspace action");
+                check(!workspaceRadar.focusWindow("bad-address"), "reject invalid window action");
+                check(!workspaceRadar.consume("bad state", "[]", "{}"), "reject malformed workspace state");
                 check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
                 check(theme.accentColor === Color.accent, "core color follows theme accent");
                 check(theme.secondaryAccentColor === Color.bar.active, "planet color follows theme secondary accent");

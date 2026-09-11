@@ -17,6 +17,8 @@ Item {
         github.refresh();
         missionSource.refresh();
         flightModes.refresh();
+        workspaceRadarSource.refresh();
+        workspaceRadarSource.startListening();
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -29,17 +31,17 @@ Item {
     }
 
     function selectModule(module) {
-        if (module >= 0 && module <= 3)
+        if (module >= 0 && module <= 4)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module >= 0 && module <= 3)
+        if (module >= 0 && module <= 4)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module < 0 || module > 3)
+        if (module < 0 || module > 4)
             return;
         selectModule(module);
         if (module === 0)
@@ -48,12 +50,15 @@ Item {
             projects.forceActiveFocus();
         else if (module === 3)
             flightModePanel.focusControls();
+        else if (module === 4)
+            workspaceRadar.forceActiveFocus();
     }
 
     // The bar derives its open state from this property. Closing never calls
     // back into shell.hide(), so all close paths are idempotent.
     function close() {
         opened = false;
+        workspaceRadarSource.stopListening();
     }
 
     function releaseFocus() {
@@ -76,12 +81,21 @@ Item {
     FlightModesSource {
         id: flightModes
     }
+    WorkspaceRadarSource {
+        id: workspaceRadarSource
+    }
     SystemBriefingSource {
         id: systemSource
     }
     SystemClock {
         id: clock
         precision: SystemClock.Minutes
+    }
+    Timer {
+        interval: 2500
+        repeat: true
+        running: root.opened
+        onTriggered: workspaceRadarSource.refresh()
     }
 
     FloatingWindow {
@@ -148,8 +162,8 @@ Item {
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
-                        height: root.activeModule === 2 || root.activeModule === 3
-                            ? (root.activeModule === 2 ? missionLog.implicitHeight : flightModePanel.implicitHeight)
+                        height: root.activeModule >= 2
+                            ? (root.activeModule === 2 ? missionLog.implicitHeight : root.activeModule === 3 ? flightModePanel.implicitHeight : workspaceRadar.implicitHeight)
                             : compact
                             ? core.height + (root.activeModule === -1 ? 0
                                 : (root.activeModule === 0 ? tasks.implicitHeight
@@ -168,7 +182,7 @@ Item {
                             theme: dashboardTheme
                             selectedModule: root.activeModule
                             animating: root.opened && visible
-                            visible: root.activeModule !== 2 && root.activeModule !== 3
+                            visible: root.activeModule < 2
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -223,6 +237,17 @@ Item {
                             source: flightModes
                             selected: root.activeModule === 3
                             visible: root.activeModule === 3
+                            onDismissRequested: root.releaseFocus()
+                        }
+                        WorkspaceRadar {
+                            id: workspaceRadar
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
+                            theme: dashboardTheme
+                            source: workspaceRadarSource
+                            selected: root.activeModule === 4
+                            visible: root.activeModule === 4
                             onDismissRequested: root.releaseFocus()
                         }
                     }

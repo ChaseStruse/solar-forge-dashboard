@@ -37,7 +37,7 @@ Item {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
                 || event.key === Qt.Key_Right || event.key === Qt.Key_Down
                 || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-            root.moduleNavigated((root.selectedModule + 1) % 4);
+            root.moduleNavigated((root.selectedModule + 1) % 5);
             event.accepted = true;
         } else if (event.key === Qt.Key_T) {
             if (!event.isAutoRepeat) root.moduleSelected(0);
@@ -50,6 +50,9 @@ Item {
             event.accepted = true;
         } else if (event.key === Qt.Key_F) {
             if (!event.isAutoRepeat) root.moduleSelected(3);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_W) {
+            if (!event.isAutoRepeat) root.moduleSelected(4);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
@@ -173,10 +176,10 @@ Item {
         }
 
         Repeater {
-            model: 4
+            model: 5
             Rectangle {
                 required property int index
-                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 4
+                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 5
                 width: 5 + index
                 height: width
                 radius: width / 2
@@ -190,11 +193,11 @@ Item {
         }
 
         Repeater {
-            model: 4
+            model: 5
             Item {
                 id: planet
                 required property int index
-                readonly property real angle: root.corePhase + index * Math.PI * 2 / 4
+                readonly property real angle: root.corePhase + index * Math.PI * 2 / 5
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
                 width: Math.max(44, chamber.width * 0.078)
@@ -239,7 +242,7 @@ Item {
                     anchors.centerIn: parent
                     // Font Awesome checklist and GitHub marks in Omarchy's
                     // bundled Nerd Font; independent of the user's text face.
-                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : "󰈐"
+                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : planet.index === 3 ? "󰈐" : "󰍹"
                     color: root.theme.foregroundColor
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
@@ -252,7 +255,9 @@ Item {
                         ? "GitHub Intel · G to toggle · Enter to focus"
                         : planet.index === 2
                             ? "Mission timeline · M to toggle · Enter to focus"
-                            : "Flight Modes · F to toggle · Enter to focus"
+                            : planet.index === 3
+                                ? "Flight Modes · F to toggle · Enter to focus"
+                                : "Workspace Radar · W to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
@@ -281,7 +286,9 @@ Item {
                     ? "● MISSION TIMELINE SELECTED  //  [ ENTER ] TO FOCUS"
                     : root.selectedModule === 3
                         ? "● FLIGHT MODES SELECTED  //  [ ENTER ] TO FOCUS"
-                        : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT MODES"
+                        : root.selectedModule === 4
+                            ? "● WORKSPACE RADAR SELECTED  //  [ ENTER ] TO FOCUS"
+                            : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT  ·  [ W ] RADAR"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11
