@@ -91,44 +91,35 @@ QtObject {
         }
     }
 
-    readonly property string statusScript: [
-        "set -euo pipefail",
-        "idle=$(omarchy toggle idle status | jq -r '.enabled')",
-        "night=$(omarchy toggle nightlight --status | jq -r '.enabled')",
-        "dnd=$(omarchy-shell -q notifications dndState)",
-        "profile=$(omarchy powerprofiles list --active-state | awk -F '\\t' '$2 == 1 { print $1; exit }')",
-        "jq -cn --argjson awake \"$idle\" --argjson night \"$night\" --arg dnd \"$dnd\" --arg profile \"$profile\" "
-            + "'{stayAwake:$awake, nightlight:$night, doNotDisturb:($dnd == \"on\"), powerProfile:($profile | select(length > 0) // \"unknown\")}'"
-    ].join("\n")
+    readonly property string statusScript:
+        "set -euo pipefail\n"
+        + "idle=$(omarchy toggle idle status | jq -r '.enabled')\n"
+        + "night=$(omarchy toggle nightlight --status | jq -r '.enabled')\n"
+        + "dnd=$(omarchy-shell -q notifications dndState)\n"
+        + "profile=$(omarchy powerprofiles list --active-state | awk -F '\\t' '$2 == 1 { print $1; exit }')\n"
+        + "jq -cn --argjson awake \"$idle\" --argjson night \"$night\" --arg dnd \"$dnd\" --arg profile \"$profile\" "
+        + "'{stayAwake:$awake, nightlight:$night, doNotDisturb:($dnd == \"on\"), powerProfile:($profile | select(length > 0) // \"unknown\")}'"
 
     readonly property var applyScripts: ({
-        focus: [
-            "set -euo pipefail",
-            "omarchy toggle idle allow-idle >/dev/null",
-            "omarchy-shell -q notifications setDnd on >/dev/null",
-            "omarchy powerprofiles set autodetect balanced >/dev/null"
-        ].join("\n"),
-        forge: [
-            "set -euo pipefail",
-            "omarchy toggle idle stay-awake >/dev/null",
-            "omarchy-shell -q notifications setDnd off >/dev/null",
-            "omarchy powerprofiles set autodetect performance >/dev/null",
-            "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null"
-        ].join("\n"),
-        drift: [
-            "set -euo pipefail",
-            "omarchy toggle idle allow-idle >/dev/null",
-            "omarchy-shell -q notifications setDnd off >/dev/null",
-            "omarchy powerprofiles set autodetect power-saver >/dev/null",
-            "omarchy toggle nightlight --status | jq -e '.enabled == true' >/dev/null || omarchy toggle nightlight >/dev/null"
-        ].join("\n"),
-        broadcast: [
-            "set -euo pipefail",
-            "omarchy toggle idle stay-awake >/dev/null",
-            "omarchy-shell -q notifications setDnd on >/dev/null",
-            "omarchy powerprofiles set autodetect balanced >/dev/null",
-            "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null"
-        ].join("\n")
+        focus: "set -euo pipefail\n"
+            + "omarchy toggle idle allow-idle >/dev/null\n"
+            + "omarchy-shell -q notifications setDnd on >/dev/null\n"
+            + "omarchy powerprofiles set autodetect balanced >/dev/null",
+        forge: "set -euo pipefail\n"
+            + "omarchy toggle idle stay-awake >/dev/null\n"
+            + "omarchy-shell -q notifications setDnd off >/dev/null\n"
+            + "omarchy powerprofiles set autodetect performance >/dev/null\n"
+            + "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null",
+        drift: "set -euo pipefail\n"
+            + "omarchy toggle idle allow-idle >/dev/null\n"
+            + "omarchy-shell -q notifications setDnd off >/dev/null\n"
+            + "omarchy powerprofiles set autodetect power-saver >/dev/null\n"
+            + "omarchy toggle nightlight --status | jq -e '.enabled == true' >/dev/null || omarchy toggle nightlight >/dev/null",
+        broadcast: "set -euo pipefail\n"
+            + "omarchy toggle idle stay-awake >/dev/null\n"
+            + "omarchy-shell -q notifications setDnd on >/dev/null\n"
+            + "omarchy powerprofiles set autodetect balanced >/dev/null\n"
+            + "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null"
     })
 
     readonly property Timer deadline: Timer {
