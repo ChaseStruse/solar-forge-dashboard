@@ -54,6 +54,19 @@ QtObject {
         return null;
     }
 
+    function scriptForMode(modeId) {
+        var common = "set -euo pipefail\n";
+        if (modeId === "focus")
+            return common + "omarchy toggle idle allow-idle >/dev/null\nomarchy-shell -q notifications setDnd on >/dev/null\nomarchy powerprofiles set autodetect balanced >/dev/null";
+        if (modeId === "forge")
+            return common + "omarchy toggle idle stay-awake >/dev/null\nomarchy-shell -q notifications setDnd off >/dev/null\nomarchy powerprofiles set autodetect performance >/dev/null\nomarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null";
+        if (modeId === "drift")
+            return common + "omarchy toggle idle allow-idle >/dev/null\nomarchy-shell -q notifications setDnd off >/dev/null\nomarchy powerprofiles set autodetect power-saver >/dev/null\nomarchy toggle nightlight --status | jq -e '.enabled == true' >/dev/null || omarchy toggle nightlight >/dev/null";
+        if (modeId === "broadcast")
+            return common + "omarchy toggle idle stay-awake >/dev/null\nomarchy-shell -q notifications setDnd on >/dev/null\nomarchy powerprofiles set autodetect balanced >/dev/null\nomarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null";
+        return "";
+    }
+
     function refresh() {
         if (loading)
             return;
@@ -70,7 +83,7 @@ QtObject {
         timedOut = false;
         pendingMode = modeId;
         status = "ENGAGING " + mode.name + " MODE…";
-        applyProcess.command = ["bash", "-lc", applyScripts[modeId]];
+        applyProcess.command = ["bash", "-lc", scriptForMode(modeId)];
         applyProcess.running = true;
         deadline.restart();
         return true;
@@ -91,37 +104,6 @@ QtObject {
         }
     }
 
-    readonly property string statusScript:
-        "set -euo pipefail\n"
-        + "idle=$(omarchy toggle idle status | jq -r '.enabled')\n"
-        + "night=$(omarchy toggle nightlight --status | jq -r '.enabled')\n"
-        + "dnd=$(omarchy-shell -q notifications dndState)\n"
-        + "profile=$(omarchy powerprofiles list --active-state | awk -F '\\t' '$2 == 1 { print $1; exit }')\n"
-        + "jq -cn --argjson awake \"$idle\" --argjson night \"$night\" --arg dnd \"$dnd\" --arg profile \"$profile\" "
-        + "'{stayAwake:$awake, nightlight:$night, doNotDisturb:($dnd == \"on\"), powerProfile:($profile | select(length > 0) // \"unknown\")}'"
-
-    readonly property var applyScripts: ({
-        focus: "set -euo pipefail\n"
-            + "omarchy toggle idle allow-idle >/dev/null\n"
-            + "omarchy-shell -q notifications setDnd on >/dev/null\n"
-            + "omarchy powerprofiles set autodetect balanced >/dev/null",
-        forge: "set -euo pipefail\n"
-            + "omarchy toggle idle stay-awake >/dev/null\n"
-            + "omarchy-shell -q notifications setDnd off >/dev/null\n"
-            + "omarchy powerprofiles set autodetect performance >/dev/null\n"
-            + "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null",
-        drift: "set -euo pipefail\n"
-            + "omarchy toggle idle allow-idle >/dev/null\n"
-            + "omarchy-shell -q notifications setDnd off >/dev/null\n"
-            + "omarchy powerprofiles set autodetect power-saver >/dev/null\n"
-            + "omarchy toggle nightlight --status | jq -e '.enabled == true' >/dev/null || omarchy toggle nightlight >/dev/null",
-        broadcast: "set -euo pipefail\n"
-            + "omarchy toggle idle stay-awake >/dev/null\n"
-            + "omarchy-shell -q notifications setDnd on >/dev/null\n"
-            + "omarchy powerprofiles set autodetect balanced >/dev/null\n"
-            + "omarchy toggle nightlight --status | jq -e '.enabled == false' >/dev/null || omarchy toggle nightlight >/dev/null"
-    })
-
     readonly property Timer deadline: Timer {
         interval: 12000
         onTriggered: {
@@ -134,7 +116,7 @@ QtObject {
     }
 
     readonly property Process statusProcess: Process {
-        command: ["bash", "-lc", root.statusScript]
+        command: ["bash", "-lc", "set -euo pipefail; idle=$(omarchy toggle idle status | jq -r '.enabled'); night=$(omarchy toggle nightlight --status | jq -r '.enabled'); dnd=$(omarchy-shell -q notifications dndState); profile=$(omarchy powerprofiles list --active-state | awk -F '\\t' '$2 == 1 { print $1; exit }'); jq -cn --argjson awake \"$idle\" --argjson night \"$night\" --arg dnd \"$dnd\" --arg profile \"$profile\" '{stayAwake:$awake, nightlight:$night, doNotDisturb:($dnd == \"on\"), powerProfile:($profile | select(length > 0) // \"unknown\")}'"]
         stdout: StdioCollector { id: statusOutput; waitForEnd: true }
         onExited: function(exitCode) {
             deadline.stop();

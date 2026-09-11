@@ -78,6 +78,8 @@ ShellRoot {
                 check(flightModes.modes.length === 4, "four flight modes");
                 check(flightModes.modeById("forge").name === "FORGE", "resolve flight mode");
                 check(flightModes.modeById("missing") === null, "reject unknown flight mode");
+                check(flightModes.scriptForMode("focus").indexOf("allow-idle") >= 0, "build focus mode command");
+                check(flightModes.scriptForMode("missing") === "", "reject unknown mode command");
                 check(!flightModes.apply("missing"), "unknown flight mode is not applied");
                 check(flightModes.consumeStatus('{"stayAwake":true,"doNotDisturb":true,"nightlight":false,"powerProfile":"balanced"}'), "parse flight state");
                 check(flightModes.stayAwake && flightModes.doNotDisturb && !flightModes.nightlight, "flight booleans update");
