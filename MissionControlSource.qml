@@ -32,7 +32,7 @@ QtObject {
     }
 
     property Process githubProcess: Process {
-        command: ["gh", "repo", "list", "--limit", "8", "--json", "nameWithOwner,pushedAt,isPrivate,stargazerCount,forkCount,url"]
+        command: ["gh", "repo", "list", "--limit", "3", "--json", "nameWithOwner,pushedAt,isPrivate,stargazerCount,forkCount,url"]
         environment: ({ GH_PROMPT_DISABLED: "1" })
         stdout: StdioCollector { id: githubOutput; waitForEnd: true }
         onExited: function(code) {
