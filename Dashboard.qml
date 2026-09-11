@@ -16,6 +16,7 @@ Item {
         activeModule = -1;
         github.refresh();
         missionSource.refresh();
+        flightModes.refresh();
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -28,23 +29,25 @@ Item {
     }
 
     function selectModule(module) {
-        if (module >= 0 && module <= 2)
+        if (module >= 0 && module <= 3)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module >= 0 && module <= 2)
+        if (module >= 0 && module <= 3)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module < 0 || module > 2)
+        if (module < 0 || module > 3)
             return;
         selectModule(module);
         if (module === 0)
             tasks.focusInput();
         else if (module === 1)
             projects.forceActiveFocus();
+        else if (module === 3)
+            flightModePanel.focusControls();
     }
 
     // The bar derives its open state from this property. Closing never calls
@@ -69,6 +72,9 @@ Item {
     }
     MissionControlSource {
         id: missionSource
+    }
+    FlightModesSource {
+        id: flightModes
     }
     SystemBriefingSource {
         id: systemSource
@@ -142,12 +148,13 @@ Item {
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
-                        height: root.activeModule === 2
-                            ? missionLog.implicitHeight
+                        height: root.activeModule === 2 || root.activeModule === 3
+                            ? (root.activeModule === 2 ? missionLog.implicitHeight : flightModePanel.implicitHeight)
                             : compact
                             ? core.height + (root.activeModule === -1 ? 0
                                 : (root.activeModule === 0 ? tasks.implicitHeight
-                                    : root.activeModule === 1 ? projects.implicitHeight : missionLog.implicitHeight) + 32)
+                                    : root.activeModule === 1 ? projects.implicitHeight
+                                    : root.activeModule === 2 ? missionLog.implicitHeight : flightModePanel.implicitHeight) + 32)
                             : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
 
                         ForgeCore {
@@ -161,7 +168,7 @@ Item {
                             theme: dashboardTheme
                             selectedModule: root.activeModule
                             animating: root.opened && visible
-                            visible: root.activeModule !== 2
+                            visible: root.activeModule !== 2 && root.activeModule !== 3
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -206,6 +213,17 @@ Item {
                                 systemSource.refresh();
                                 systemBriefing.play();
                             }
+                        }
+                        FlightModesSection {
+                            id: flightModePanel
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
+                            theme: dashboardTheme
+                            source: flightModes
+                            selected: root.activeModule === 3
+                            visible: root.activeModule === 3
+                            onDismissRequested: root.releaseFocus()
                         }
                     }
                     Text {

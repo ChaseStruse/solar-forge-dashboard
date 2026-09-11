@@ -18,6 +18,15 @@ ShellRoot {
     DashboardTheme {
         id: theme
     }
+    FlightModesSource {
+        id: flightModes
+    }
+    FlightModesSection {
+        id: flightModesSection
+        width: 800
+        theme: theme
+        source: flightModes
+    }
     TodoSection {
         id: taskSection
         width: 600
@@ -66,6 +75,15 @@ ShellRoot {
                 check(github.repositories.length === 0, "reject non-array");
                 github.consume('[{"name":"example","description":"<b>literal text</b>"}]');
                 check(github.repositories.length === 1, "valid repository");
+                check(flightModes.modes.length === 4, "four flight modes");
+                check(flightModes.modeById("forge").name === "FORGE", "resolve flight mode");
+                check(flightModes.modeById("missing") === null, "reject unknown flight mode");
+                check(!flightModes.apply("missing"), "unknown flight mode is not applied");
+                check(flightModes.consumeStatus('{"stayAwake":true,"doNotDisturb":true,"nightlight":false,"powerProfile":"balanced"}'), "parse flight state");
+                check(flightModes.stayAwake && flightModes.doNotDisturb && !flightModes.nightlight, "flight booleans update");
+                check(flightModes.powerProfile === "balanced", "power profile updates");
+                check(!flightModes.consumeStatus("bad state"), "reject malformed flight state");
+                check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
                 dashboard.opened = true;
                 dashboard.close();
                 dashboard.close();
@@ -83,6 +101,8 @@ ShellRoot {
                 check(dashboard.activeModule === 1, "navigation selects without toggling closed");
                 dashboard.openModule(42);
                 check(dashboard.activeModule === 1, "invalid module ignored");
+                core.moduleSelected(3);
+                check(dashboard.activeModule === 3, "toggle opens Flight Modes");
                 core.animating = true;
                 lifecycle.start();
             } catch (failure) {
