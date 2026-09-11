@@ -11,6 +11,11 @@ Item {
     signal dismissRequested()
     implicitHeight: content.implicitHeight + 48
 
+    onSelectedChanged: {
+        if (selected)
+            Qt.callLater(focusControls);
+    }
+
     function focusControls() {
         modeGrid.forceActiveFocus();
     }
@@ -96,11 +101,19 @@ Item {
             focus: true
             property int keyboardIndex: 0
             Keys.onPressed: function(event) {
-                if (event.key === Qt.Key_Left || event.key === Qt.Key_Up) {
-                    keyboardIndex = (keyboardIndex + root.source.modes.length - 1) % root.source.modes.length;
+                var count = root.source.modes.length;
+                var columnCount = columns;
+                if (event.key === Qt.Key_Left) {
+                    keyboardIndex = (keyboardIndex + count - 1) % count;
                     event.accepted = true;
-                } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
-                    keyboardIndex = (keyboardIndex + 1) % root.source.modes.length;
+                } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Tab) {
+                    keyboardIndex = (keyboardIndex + 1) % count;
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Up) {
+                    keyboardIndex = (keyboardIndex + count - columnCount) % count;
+                    event.accepted = true;
+                } else if (event.key === Qt.Key_Down) {
+                    keyboardIndex = (keyboardIndex + columnCount) % count;
                     event.accepted = true;
                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
                     root.source.apply(root.source.modes[keyboardIndex].id);
@@ -157,7 +170,11 @@ Item {
                         hoverEnabled: true
                         cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onEntered: modeGrid.keyboardIndex = modeCard.index
-                        onClicked: root.source.apply(modeCard.modelData.id)
+                        onClicked: {
+                            modeGrid.keyboardIndex = modeCard.index;
+                            modeGrid.forceActiveFocus();
+                            root.source.apply(modeCard.modelData.id);
+                        }
                     }
                 }
             }
