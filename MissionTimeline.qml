@@ -87,7 +87,7 @@ Item {
                 model: [
                     { label: "REPOSITORIES", value: String(root.source.repositories.length), unit: "SYNCED", note: root.source.githubStatus, tone: "accent" },
                     { label: "LATEST ACTIVITY", value: root.source.events.length ? root.source.events[0].time : "—", unit: "LOCAL", note: root.source.events.length ? root.source.events[0].title : "No GitHub activity", tone: "autonomous" },
-                    { label: "WEATHER", value: root.source.weatherLocation, unit: "", note: root.source.weatherValue, tone: "weather" }
+                    { label: "WEATHER", value: root.source.weatherCondition, unit: "", note: root.source.weatherLocation + " · " + root.source.weatherValue, tone: "weather" }
                 ]
                 Rectangle {
                     required property var modelData
