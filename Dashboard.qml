@@ -217,6 +217,11 @@ Item {
                     }
                 }
             }
+            AmbientLayer {
+                anchors.fill: parent
+                visible: root.opened
+                z: 10
+            }
             SystemBriefing {
                 id: systemBriefing
                 anchors.fill: parent

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell.Io
 import qs.Commons
 
 Item {
@@ -8,12 +9,33 @@ Item {
     required property DashboardTheme theme
     required property MissionControlSource source
     property bool selected: false
+    property bool audioEnabled: false
+    property real eventGlow: 0
     signal dismissRequested()
     signal replayBriefing()
     implicitHeight: content.implicitHeight + 48
 
     readonly property color autonomousColor: "#62d6b3"
     readonly property color weatherColor: "#70b9df"
+
+    onSourceChanged: eventGlow = 0
+    Connections {
+        target: root.source
+        function onRefreshedAtChanged() {
+            if (!root.source.refreshedAt) return
+            updatePulse.restart()
+            if (root.audioEnabled && !audioCue.running) audioCue.running = true
+        }
+    }
+    SequentialAnimation {
+        id: updatePulse
+        NumberAnimation { target: root; property: "eventGlow"; to: 0.12; duration: 130 }
+        NumberAnimation { target: root; property: "eventGlow"; to: 0; duration: 720 }
+    }
+    Process {
+        id: audioCue
+        command: ["canberra-gtk-play", "-i", "message-new-instant"]
+    }
 
     function toneColor(tone) {
         if (tone === "autonomous") return autonomousColor;
@@ -28,6 +50,7 @@ Item {
         color: Util.alpha(root.theme.backgroundColor, 0.96)
         border.color: root.theme.borderColor
     }
+    Rectangle { anchors.fill: parent; radius: 12; color: root.autonomousColor; opacity: root.eventGlow }
 
     Column {
         id: content
@@ -74,8 +97,33 @@ Item {
                 Row {
                     anchors.centerIn: parent
                     spacing: 8
-                    Rectangle { width: 7; height: 7; radius: 4; color: root.autonomousColor }
+                    Rectangle {
+                        width: 7; height: 7; radius: 4; color: root.autonomousColor
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            running: root.source.loading
+                            NumberAnimation { to: 0.25; duration: 520 }
+                            NumberAnimation { to: 1; duration: 520 }
+                        }
+                    }
                     Text { text: root.source.loading ? "SYNCING" : "SOURCES LIVE"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true; font.letterSpacing: 0.8 }
+                }
+            }
+            Rectangle {
+                Layout.alignment: Qt.AlignTop
+                implicitWidth: 72
+                implicitHeight: 30
+                radius: 15
+                color: root.audioEnabled ? Util.alpha(root.autonomousColor, 0.11) : root.theme.surfaceColor
+                border.color: root.audioEnabled ? Util.alpha(root.autonomousColor, 0.5) : root.theme.borderColor
+                Text { anchors.centerIn: parent; text: root.audioEnabled ? "SFX  ON" : "SFX  OFF"; color: root.audioEnabled ? root.autonomousColor : root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 8; font.bold: true; font.letterSpacing: 0.8 }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.audioEnabled = !root.audioEnabled
+                        if (root.audioEnabled && !audioCue.running) audioCue.running = true
+                    }
                 }
             }
             Rectangle {
@@ -119,6 +167,33 @@ Item {
                         }
                         Text { text: modelData.note; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9 }
                     }
+                }
+            }
+        }
+
+        Rectangle {
+            id: ticker
+            width: parent.width
+            height: 28
+            clip: true
+            color: Util.alpha(root.theme.foregroundColor, 0.025)
+            border.color: root.theme.borderColor
+            Text {
+                id: tickerText
+                anchors.verticalCenter: parent.verticalCenter
+                text: "GITHUB  //  " + (root.source.events.length ? root.source.events[0].title : root.source.githubStatus)
+                    + "     WEATHER  //  " + root.source.weatherCondition + " · " + root.source.weatherValue
+                    + "     LAST SYNC  //  " + (root.source.refreshedAt || "WAITING")
+                color: root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: 9
+                font.letterSpacing: 1
+                NumberAnimation on x {
+                    from: ticker.width
+                    to: -tickerText.implicitWidth
+                    duration: 19000
+                    loops: Animation.Infinite
+                    running: root.visible
                 }
             }
         }
