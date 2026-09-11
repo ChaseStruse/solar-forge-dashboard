@@ -11,12 +11,24 @@ Rectangle {
     property int stage: 0
     visible: false
     opacity: visible ? 1 : 0
+    focus: visible
     color: Util.alpha(theme.backgroundColor, 0.94)
     z: 100
     Behavior on opacity { NumberAnimation { duration: 260 } }
 
-    function play() { stage = 0; visible = true; reveal.restart() }
+    function play() {
+        stage = 0
+        visible = true
+        reveal.restart()
+        Qt.callLater(function() { root.forceActiveFocus() })
+    }
     function dismiss() { visible = false }
+    Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+            root.dismiss()
+            event.accepted = true
+        }
+    }
     Timer { id: reveal; interval: 700; onTriggered: root.stage = 1 }
 
     MouseArea { anchors.fill: parent }
