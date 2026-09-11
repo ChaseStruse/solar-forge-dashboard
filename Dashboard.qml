@@ -13,7 +13,7 @@ Item {
     function open() {
         todos.load();
         opened = true;
-        activeModule = 2;
+        activeModule = -1;
         github.refresh();
         missionSource.refresh();
         if (!briefingShown) {
