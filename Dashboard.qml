@@ -53,6 +53,11 @@ Item {
         opened = false;
     }
 
+    function releaseFocus() {
+        activeModule = -1;
+        core.focusPicker();
+    }
+
     DashboardTheme {
         id: dashboardTheme
     }
@@ -87,7 +92,7 @@ Item {
         FocusScope {
             anchors.fill: parent
             focus: true
-            Keys.onEscapePressed: root.close()
+            Keys.onEscapePressed: root.releaseFocus()
 
             Shortcut {
                 sequence: "Ctrl+Space"
@@ -172,7 +177,7 @@ Item {
                             store: todos
                             selected: root.activeModule === 0
                             visible: root.activeModule === 0
-                            onDismissRequested: root.close()
+                            onDismissRequested: root.releaseFocus()
                         }
                         GitHubSection {
                             id: projects
@@ -196,7 +201,7 @@ Item {
                             source: missionSource
                             selected: root.activeModule === 2
                             visible: root.activeModule === 2
-                            onDismissRequested: root.close()
+                            onDismissRequested: root.releaseFocus()
                             onReplayBriefing: {
                                 systemSource.refresh();
                                 systemBriefing.play();
@@ -204,7 +209,7 @@ Item {
                         }
                     }
                     Text {
-                        text: "[ ESC ] close"
+                        text: "[ ESC ] return focus to core"
                         color: dashboardTheme.faintTextColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 13

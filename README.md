@@ -8,7 +8,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
 - Up to four GitHub repositories returned by `gh repo list`
 - Bar-launcher icon for the dashboard
-- Normal desktop window that Hyprland can tile, dismissible with `Escape` or its title-bar close button
+- Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with recent GitHub activity and live Omarchy weather
@@ -24,7 +24,8 @@ The dashboard opens with all panels hidden. While the core has focus, press
 `T` for Objectives, `G` for GitHub, or `M` for the mission timeline; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
-double-clicking focuses it. Escape closes the dashboard. Planet icons use
+double-clicking focuses it. Escape minimizes the active module and returns
+focus to the orbital picker. Planet icons use
 Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
@@ -74,7 +75,7 @@ requests. Temporary test output is retained at the path printed by the runner.
 
 For live verification, reload the installed plugin with
 `omarchy-shell shell rescanPlugins`, open/close it from the bar, test Escape
-while typing, and check a short tiled window and the scrollbar. The offscreen
+while typing returns focus to the core, and check a short tiled window and the scrollbar. The offscreen
 checks do not replace compositor or pointer/keyboard interaction checks.
 
 ## Recommended next steps

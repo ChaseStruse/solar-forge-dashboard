@@ -27,6 +27,9 @@ Rectangle {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             root.dismiss()
             event.accepted = true
+        } else if (event.key === Qt.Key_Escape) {
+            root.dismiss()
+            event.accepted = true
         }
     }
     Timer { id: reveal; interval: 700; onTriggered: root.stage = 1 }

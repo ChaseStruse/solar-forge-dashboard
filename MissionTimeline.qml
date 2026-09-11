@@ -193,7 +193,7 @@ Item {
         Text {
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            text: "[ M ] RETURN TO ORBIT   ·   [ ESC ] CLOSE"
+            text: "[ M ] RETURN TO ORBIT   ·   [ ESC ] RELEASE FOCUS"
             color: root.theme.faintTextColor
             font.family: Style.font.menuFamily
             font.pixelSize: 9
