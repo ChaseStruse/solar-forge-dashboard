@@ -19,6 +19,7 @@ Item {
         flightModes.refresh();
         workspaceRadarSource.refresh();
         workspaceRadarSource.startListening();
+        reminders.refresh();
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -84,6 +85,11 @@ Item {
     WorkspaceRadarSource {
         id: workspaceRadarSource
     }
+    ReminderBridgeSource {
+        id: reminders
+        onReminderScheduled: function(taskId, unit, due) { todos.setReminder(taskId, unit, due); }
+        onReminderInventoryChanged: function(items) { todos.reconcileReminders(items, Date.now()); }
+    }
     SystemBriefingSource {
         id: systemSource
     }
@@ -96,6 +102,12 @@ Item {
         repeat: true
         running: root.opened
         onTriggered: workspaceRadarSource.refresh()
+    }
+    Timer {
+        interval: 10000
+        repeat: true
+        running: root.opened
+        onTriggered: reminders.refresh()
     }
 
     FloatingWindow {
@@ -196,6 +208,7 @@ Item {
                                 : (commandDeck.height - height) / 2
                             theme: dashboardTheme
                             store: todos
+                            reminderSource: reminders
                             selected: root.activeModule === 0
                             visible: root.activeModule === 0
                             onDismissRequested: root.releaseFocus()

@@ -25,6 +25,9 @@ ShellRoot {
     WorkspaceRadarSource {
         id: workspaceRadar
     }
+    ReminderBridgeSource {
+        id: reminders
+    }
     FlightModesSection {
         id: flightModesSection
         width: 800
@@ -36,6 +39,7 @@ ShellRoot {
         width: 600
         theme: theme
         store: store
+        reminderSource: reminders
     }
     ForgeCore {
         id: core
@@ -65,6 +69,17 @@ ShellRoot {
                 check(store.remaining === 49, "updated count");
                 check(store.load() && store.model.count === 50, "persisted tasks");
                 check(store.model.get(49).taskId === id, "completed tasks sort last");
+                check(reminders.linkedTaskId("☀ Objective #42 · Write tests") === 42, "parse linked reminder task");
+                check(reminders.displayLabel("☀ Objective #42 · Write tests", "") === "Write tests", "clean reminder label");
+                check(reminders.consume('{"count":1,"reminders":[{"unit":"omarchy-reminder-25m-1","message":"☀ Objective #42 · Write tests","at":2000000000,"atTime":"10:00","remainingSeconds":120}]}'), "parse reminder inventory");
+                check(reminders.reminders.length === 1 && reminders.reminders[0].taskId === 42, "normalize linked reminder");
+                var activeTaskId = store.model.get(0).taskId;
+                check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
+                check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");
+                var expiredDone = false;
+                for (var taskIndex = 0; taskIndex < store.model.count; taskIndex++)
+                    if (store.model.get(taskIndex).taskId === activeTaskId) expiredDone = store.model.get(taskIndex).done;
+                check(expiredDone, "expired reminder completes objective");
                 var viewport = null;
                 for (var child of taskSection.children)
                     if (child.objectName === "todoViewport")

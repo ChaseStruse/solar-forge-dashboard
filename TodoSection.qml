@@ -6,7 +6,11 @@ Column {
     id: root
     required property DashboardTheme theme
     required property TodoStore store
+    required property ReminderBridgeSource reminderSource
     property bool selected: false
+    property int reminderTaskId: -1
+    property string reminderTaskTitle: ""
+    property double currentTime: Date.now()
     signal dismissRequested
 
     function focusInput() {
@@ -16,6 +20,19 @@ Column {
         if (store.add(newTodoInput.text))
             newTodoInput.text = "";
         focusInput();
+    }
+    function countdown(due) {
+        var seconds = Math.max(0, Math.ceil((Number(due) - currentTime) / 1000));
+        var minutes = Math.floor(seconds / 60);
+        var remainder = seconds % 60;
+        return minutes + ":" + (remainder < 10 ? "0" : "") + remainder;
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.visible && root.reminderSource.reminders.length > 0
+        onTriggered: root.currentTime = Date.now()
     }
 
     spacing: 8
@@ -61,6 +78,51 @@ Column {
         }
     }
 
+    Rectangle {
+        width: parent.width
+        height: reminderTaskId >= 0 ? 42 : 0
+        visible: height > 0
+        color: root.theme.completedSurfaceColor
+        border.color: root.theme.accentColor
+        clip: true
+        Row {
+            anchors.centerIn: parent
+            spacing: 7
+            Text {
+                text: "REMIND IN"
+                color: root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: 10
+                anchors.verticalCenter: parent.verticalCenter
+            }
+            Repeater {
+                model: [5, 25, 50]
+                Rectangle {
+                    required property int modelData
+                    width: 42; height: 26; radius: 5
+                    color: presetMouse.containsMouse ? root.theme.surfaceColor : "transparent"
+                    border.color: root.theme.borderColor
+                    Text {
+                        anchors.centerIn: parent
+                        text: modelData + "m"
+                        color: root.theme.foregroundColor
+                        font.family: Style.font.menuFamily
+                        font.pixelSize: 10; font.bold: true
+                    }
+                    MouseArea {
+                        id: presetMouse
+                        anchors.fill: parent; hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (root.reminderSource.schedule(root.reminderTaskId, root.reminderTaskTitle, modelData))
+                                root.reminderTaskId = -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Keep the command center compact even when the task backlog grows.
     // This viewport is exactly three task rows high; the scrollbar appears
     // only once there are more rows to browse.
@@ -79,6 +141,8 @@ Column {
             required property int taskId
             required property string title
             required property bool done
+            required property string reminderUnit
+            required property double reminderDue
             width: todoViewport.width - (todoScrollbar.visible ? todoScrollbar.width + 6 : 0)
             height: todoViewport.rowHeight
             color: done ? root.theme.completedSurfaceColor : root.theme.surfaceColor
@@ -106,8 +170,8 @@ Column {
             Text {
                 anchors.left: completionBox.right
                 anchors.leftMargin: 10
-                anchors.right: parent.right
-                anchors.rightMargin: 10
+                anchors.right: reminderButton.left
+                anchors.rightMargin: 8
                 anchors.verticalCenter: parent.verticalCenter
                 text: title
                 textFormat: Text.PlainText
@@ -117,14 +181,69 @@ Column {
                 elide: Text.ElideRight
                 font.strikeout: done
             }
+            Rectangle {
+                id: reminderButton
+                width: 28; height: 28; radius: 5
+                anchors.right: parent.right; anchors.rightMargin: 5
+                anchors.verticalCenter: parent.verticalCenter
+                color: reminderUnit ? root.theme.accentColor : "transparent"
+                border.color: reminderUnit ? root.theme.accentColor : root.theme.borderColor
+                visible: !done
+                Text {
+                    anchors.centerIn: parent
+                    text: reminderUnit ? "󰃰" : "󰔛"
+                    color: reminderUnit ? root.theme.backgroundColor : root.theme.dimmedTextColor
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 14
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        root.reminderTaskId = taskId;
+                        root.reminderTaskTitle = title;
+                    }
+                }
+                ToolTip.visible: reminderHover.containsMouse
+                ToolTip.text: reminderUnit ? "Reminder linked" : "Turn into reminder"
+                MouseArea { id: reminderHover; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.NoButton }
+            }
             MouseArea {
-                anchors.fill: parent
-                onClicked: root.store.setDone(taskId, !done)
+                anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom
+                anchors.right: reminderButton.left
+                onClicked: {
+                    if (!done && reminderUnit) root.reminderSource.cancel(reminderUnit);
+                    root.store.setDone(taskId, !done);
+                }
             }
         }
         ScrollBar.vertical: ScrollBar {
             id: todoScrollbar
             policy: todoViewport.count > todoViewport.visibleRows ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+        }
+    }
+    Column {
+        width: parent.width
+        spacing: 4
+        visible: root.reminderSource.reminders.length > 0
+        Text {
+            text: "INBOUND TRANSMISSIONS // " + root.reminderSource.reminders.length
+            color: root.theme.accentColor
+            font.family: Style.font.menuFamily
+            font.pixelSize: 10
+            font.letterSpacing: 1
+        }
+        Repeater {
+            model: root.reminderSource.reminders.slice(0, 3)
+            Text {
+                required property var modelData
+                width: parent.width
+                text: "◉ " + modelData.label + "  ·  T−" + root.countdown(modelData.at) + "  ·  ETA " + modelData.atTime
+                color: root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: 10
+                elide: Text.ElideRight
+            }
         }
     }
     Text {

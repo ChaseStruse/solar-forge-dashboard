@@ -15,6 +15,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
+- Mission Timer bridges objectives into Omarchy reminders with focus presets, inbound-transmission telemetry, cancellation, and completion synchronization after expiry
 
 ## Launching
 
@@ -53,6 +54,7 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `FlightModesSection.qml`: mode selection, live state, and keyboard controls.
 - `WorkspaceRadarSource.qml`: Hyprland workspace/window discovery and focus actions.
 - `WorkspaceRadar.qml`: orbital workspace topology and pointer interactions.
+- `ReminderBridgeSource.qml`: Omarchy reminder scheduling, discovery, cancellation, and objective linkage.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.
