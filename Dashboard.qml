@@ -8,6 +8,7 @@ Item {
     id: root
     property bool opened: false
     property int activeModule: -1
+    property bool briefingShown: false
 
     function open() {
         todos.load();
@@ -15,6 +16,11 @@ Item {
         activeModule = 2;
         github.refresh();
         missionSource.refresh();
+        if (!briefingShown) {
+            briefingShown = true;
+            systemSource.refresh();
+            Qt.callLater(function() { systemBriefing.play(); });
+        }
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -58,6 +64,9 @@ Item {
     }
     MissionControlSource {
         id: missionSource
+    }
+    SystemBriefingSource {
+        id: systemSource
     }
     SystemClock {
         id: clock
@@ -188,6 +197,10 @@ Item {
                             selected: root.activeModule === 2
                             visible: root.activeModule === 2
                             onDismissRequested: root.close()
+                            onReplayBriefing: {
+                                systemSource.refresh();
+                                systemBriefing.play();
+                            }
                         }
                     }
                     Text {
@@ -198,6 +211,14 @@ Item {
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
+            }
+            SystemBriefing {
+                id: systemBriefing
+                anchors.fill: parent
+                theme: dashboardTheme
+                source: systemSource
+                missionSource: missionSource
+                objectiveCount: todos.remaining
             }
         }
     }

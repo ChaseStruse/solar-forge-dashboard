@@ -12,6 +12,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with recent GitHub activity and live Omarchy weather
+- Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 
 ## Launching
 
@@ -43,6 +44,8 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `MissionControlSource.qml`: GitHub activity and Omarchy weather requests.
 - `MissionTimeline.qml`: the live GitHub and weather command surface.
 - `TimelineLane.qml`: shared timeline presentation for source events.
+- `SystemBriefingSource.qml`: local system-health collection and recommendations.
+- `SystemBriefing.qml`: the cinematic startup and replay briefing.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.

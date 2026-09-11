@@ -9,6 +9,7 @@ Item {
     required property MissionControlSource source
     property bool selected: false
     signal dismissRequested()
+    signal replayBriefing()
     implicitHeight: content.implicitHeight + 48
 
     readonly property color autonomousColor: "#62d6b3"
@@ -76,6 +77,16 @@ Item {
                     Rectangle { width: 7; height: 7; radius: 4; color: root.autonomousColor }
                     Text { text: root.source.loading ? "SYNCING" : "SOURCES LIVE"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true; font.letterSpacing: 0.8 }
                 }
+            }
+            Rectangle {
+                Layout.alignment: Qt.AlignTop
+                implicitWidth: 122
+                implicitHeight: 30
+                radius: 15
+                color: root.theme.surfaceColor
+                border.color: root.theme.borderColor
+                Text { anchors.centerIn: parent; text: "REPLAY BRIEFING"; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 8; font.bold: true; font.letterSpacing: 0.8 }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.replayBriefing() }
             }
         }
 
