@@ -8,8 +8,6 @@ Item {
     id: root
     property bool opened: false
     property int activeModule: -1
-    readonly property string userName: Quickshell.env("USER") || Quickshell.env("LOGNAME") || "operator"
-    readonly property string displayName: userName.charAt(0).toUpperCase() + userName.slice(1)
 
     function open() {
         todos.load();
@@ -17,7 +15,6 @@ Item {
         activeModule = 2;
         github.refresh();
         missionSource.refresh();
-        briefingView.replay();
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -61,10 +58,6 @@ Item {
     }
     MissionControlSource {
         id: missionSource
-    }
-    DailyBriefingSource {
-        id: briefing
-        weatherSource: missionSource
     }
     SystemClock {
         id: clock
@@ -127,15 +120,6 @@ Item {
                         height: 1
                         color: dashboardTheme.accentColor
                         opacity: 0.3
-                    }
-                    DailyBriefing {
-                        id: briefingView
-                        width: parent.width
-                        theme: dashboardTheme
-                        source: briefing
-                        operatorName: root.displayName
-                        active: root.opened
-                        hour: clock.date.getHours()
                     }
                     Item {
                         id: commandDeck
