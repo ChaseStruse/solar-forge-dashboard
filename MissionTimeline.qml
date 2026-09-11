@@ -60,16 +60,20 @@ Item {
         anchors.margins: 24
         spacing: 20
 
-        RowLayout {
+        GridLayout {
             width: parent.width
+            columns: 3
+            columnSpacing: 10
+            rowSpacing: 16
             Column {
+                Layout.columnSpan: 3
                 Layout.fillWidth: true
                 spacing: 5
                 Text {
-                    text: "MISSION CONTROL  /  GITHUB + LOCAL WEATHER"
+                    text: "MISSION CONTROL"
                     color: root.theme.accentColor
                     font.family: Style.font.menuFamily
-                    font.pixelSize: 10
+                    font.pixelSize: 12
                     font.bold: true
                     font.letterSpacing: 1.6
                 }
@@ -84,12 +88,12 @@ Item {
                     text: "Real activity from your connected system services."
                     color: root.theme.dimmedTextColor
                     font.family: Style.font.menuFamily
-                    font.pixelSize: 11
+                    font.pixelSize: 12
                 }
             }
             Rectangle {
                 Layout.alignment: Qt.AlignTop
-                implicitWidth: 134
+                implicitWidth: 158
                 implicitHeight: 30
                 radius: 15
                 color: Util.alpha(root.autonomousColor, 0.10)
@@ -106,17 +110,17 @@ Item {
                             NumberAnimation { to: 1; duration: 520 }
                         }
                     }
-                    Text { text: root.source.loading ? "SYNCING" : "SOURCES LIVE"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true; font.letterSpacing: 0.8 }
+                    Text { text: root.source.loading ? "SYNCING" : "SYNC COMPLETE"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 0.8 }
                 }
             }
             Rectangle {
                 Layout.alignment: Qt.AlignTop
-                implicitWidth: 72
+                implicitWidth: 92
                 implicitHeight: 30
                 radius: 15
                 color: root.audioEnabled ? Util.alpha(root.autonomousColor, 0.11) : root.theme.surfaceColor
                 border.color: root.audioEnabled ? Util.alpha(root.autonomousColor, 0.5) : root.theme.borderColor
-                Text { anchors.centerIn: parent; text: root.audioEnabled ? "SFX  ON" : "SFX  OFF"; color: root.audioEnabled ? root.autonomousColor : root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 8; font.bold: true; font.letterSpacing: 0.8 }
+                Text { anchors.centerIn: parent; text: root.audioEnabled ? "SFX  ON" : "SFX  OFF"; color: root.audioEnabled ? root.autonomousColor : root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 0.8 }
                 MouseArea {
                     anchors.fill: parent
                     cursorShape: Qt.PointingHandCursor
@@ -128,12 +132,12 @@ Item {
             }
             Rectangle {
                 Layout.alignment: Qt.AlignTop
-                implicitWidth: 122
+                implicitWidth: 158
                 implicitHeight: 30
                 radius: 15
                 color: root.theme.surfaceColor
                 border.color: root.theme.borderColor
-                Text { anchors.centerIn: parent; text: "REPLAY BRIEFING"; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 8; font.bold: true; font.letterSpacing: 0.8 }
+                Text { anchors.centerIn: parent; text: "REPLAY BRIEFING"; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 0.8 }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.replayBriefing() }
             }
         }
@@ -151,7 +155,7 @@ Item {
                 Rectangle {
                     required property var modelData
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 94
+                    Layout.preferredHeight: 126
                     radius: 7
                     color: root.theme.surfaceColor
                     border.color: root.theme.borderColor
@@ -159,13 +163,14 @@ Item {
                         anchors.fill: parent
                         anchors.margins: 14
                         spacing: 6
-                        Text { text: modelData.label; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true; font.letterSpacing: 1.1 }
-                        Row {
+                        Text { text: modelData.label; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1.1 }
+                        RowLayout {
+                            width: parent.width
                             spacing: 6
-                            Text { text: modelData.value; color: root.toneColor(modelData.tone); font.family: Style.font.menuFamily; font.pixelSize: 24; font.bold: true }
-                            Text { anchors.baseline: parent.children[0].baseline; text: modelData.unit; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10 }
+                            Text { Layout.fillWidth: true; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.value; color: root.toneColor(modelData.tone); font.family: Style.font.menuFamily; font.pixelSize: 24; font.bold: true }
+                            Text { Layout.alignment: Qt.AlignBaseline; text: modelData.unit; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
                         }
-                        Text { text: modelData.note; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9 }
+                        Text { width: parent.width; wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.note; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
                     }
                 }
             }
@@ -186,7 +191,7 @@ Item {
                     + "     LAST SYNC  //  " + (root.source.refreshedAt || "WAITING")
                 color: root.theme.dimmedTextColor
                 font.family: Style.font.menuFamily
-                font.pixelSize: 9
+                font.pixelSize: 12
                 font.letterSpacing: 1
                 NumberAnimation on x {
                     from: ticker.width
@@ -200,7 +205,7 @@ Item {
 
         Rectangle {
             width: parent.width
-            height: 64
+            height: Math.max(76, statusText.implicitHeight + 48)
             radius: 7
             color: Util.alpha(root.theme.urgentColor, 0.07)
             border.color: Util.alpha(root.theme.urgentColor, 0.35)
@@ -216,19 +221,22 @@ Item {
                 Column {
                     Layout.fillWidth: true
                     spacing: 3
-                    Text { text: "SOURCE STATUS"; color: root.theme.urgentColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
-                    Text { text: root.source.githubStatus + " · " + root.source.weatherStatus; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10 }
+                    Text { text: "SOURCE STATUS"; color: root.theme.urgentColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1 }
+                    Text { id: statusText; width: parent.width; wrapMode: Text.Wrap; textFormat: Text.PlainText; text: root.source.githubStatus + " · " + root.source.weatherStatus; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
                 }
-                Text { text: "LIVE DATA"; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.letterSpacing: 1 }
+                Text { text: "LIVE DATA"; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.letterSpacing: 1 }
             }
         }
 
-        RowLayout {
+        GridLayout {
             width: parent.width
-            spacing: 26
+            columns: root.width < 800 ? 1 : 2
+            columnSpacing: 28
+            rowSpacing: 24
             TimelineLane {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 1.16
+                Layout.preferredWidth: 1
+                Layout.alignment: Qt.AlignTop
                 theme: root.theme
                 title: "RECENT REPOSITORY ACTIVITY"
                 subtitle: "GITHUB"
@@ -237,10 +245,10 @@ Item {
                 autonomousColor: root.autonomousColor
                 weatherColor: root.weatherColor
             }
-            Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: root.theme.borderColor }
             TimelineLane {
                 Layout.fillWidth: true
-                Layout.preferredWidth: 0.84
+                Layout.preferredWidth: 1
+                Layout.alignment: Qt.AlignTop
                 theme: root.theme
                 title: "CURRENT CONDITIONS"
                 subtitle: "OMARCHY WEATHER"
@@ -260,9 +268,9 @@ Item {
                 anchors.fill: parent
                 anchors.leftMargin: 14
                 anchors.rightMargin: 14
-                Text { text: "DATA SOURCES"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true; font.letterSpacing: 1.2 }
-                Text { Layout.fillWidth: true; text: "GitHub CLI · Omarchy weather location and service"; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10 }
-                Text { text: root.source.refreshedAt ? "UPDATED " + root.source.refreshedAt : "WAITING"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true }
+                Text { text: "DATA SOURCES"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1.2 }
+                Text { Layout.fillWidth: true; elide: Text.ElideRight; text: "GitHub CLI · Omarchy weather location and service"; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
+                Text { text: root.source.refreshedAt ? "UPDATED " + root.source.refreshedAt : "WAITING"; color: root.autonomousColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true }
             }
         }
         Text {
@@ -271,7 +279,7 @@ Item {
             text: "[ M ] RETURN TO ORBIT   ·   [ ESC ] RELEASE FOCUS"
             color: root.theme.faintTextColor
             font.family: Style.font.menuFamily
-            font.pixelSize: 9
+            font.pixelSize: 12
             font.letterSpacing: 1
         }
     }
