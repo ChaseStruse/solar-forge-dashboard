@@ -224,6 +224,7 @@ Item {
                 source: systemSource
                 missionSource: missionSource
                 objectiveCount: todos.remaining
+                onBriefingDismissed: Qt.callLater(function() { core.focusPicker(); })
             }
         }
     }

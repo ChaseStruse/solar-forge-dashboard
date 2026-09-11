@@ -8,6 +8,7 @@ Rectangle {
     required property SystemBriefingSource source
     required property MissionControlSource missionSource
     required property int objectiveCount
+    signal briefingDismissed()
     property int stage: 0
     visible: false
     opacity: visible ? 1 : 0
@@ -22,7 +23,10 @@ Rectangle {
         reveal.restart()
         Qt.callLater(function() { root.forceActiveFocus() })
     }
-    function dismiss() { visible = false }
+    function dismiss() {
+        visible = false
+        briefingDismissed()
+    }
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             root.dismiss()
