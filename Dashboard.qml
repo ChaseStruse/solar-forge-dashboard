@@ -64,6 +64,7 @@ Item {
     }
     DailyBriefingSource {
         id: briefing
+        weatherSource: missionSource
     }
     SystemClock {
         id: clock

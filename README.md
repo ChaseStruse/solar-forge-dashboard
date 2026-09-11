@@ -34,20 +34,21 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 
 ## Daily briefing setup
 
-Solar Forge does not infer a location or transmit energy data. Set any of these
-environment variables for the Omarchy shell to populate the report:
+Daily Briefing uses the same configured location and live weather source as
+Omarchy's weather widget. Energy and savings remain explicit local inputs. Set
+these environment variables for the Omarchy shell to populate those values:
 
 ```bash
 SOLAR_FORGE_DAILY_GENERATION_KWH=18.4
 SOLAR_FORGE_DAILY_SAVINGS_USD=3.27
-SOLAR_FORGE_FORECAST="PARTLY CLOUDY // 72°F"
 SOLAR_FORGE_RECOMMENDATION="HOLD BATTERY RESERVE FOR THE EVENING PEAK."
 ```
 
-These are static inputs inherited when the shell starts, not a live solar or
-weather integration. Update them through your shell session's environment and
-restart the shell to reload them. Missing, blank, negative, or non-finite numeric
-values show as unavailable; explicit zero is valid. Savings are displayed in USD.
+These are static inputs inherited when the shell starts. Update them through
+your shell session's environment and restart the shell to reload them. Missing,
+blank, negative, or non-finite numeric values show as unavailable; explicit zero
+is valid. Savings are displayed in USD. `SOLAR_FORGE_FORECAST` remains available
+as a fallback when live weather cannot load.
 
 ## Code structure
 
