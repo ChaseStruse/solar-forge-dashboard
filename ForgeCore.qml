@@ -15,7 +15,8 @@ Item {
     signal moduleNavigated(int module)
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
-    readonly property real chamberSize: Math.min(width, 720)
+    readonly property real chamberSize: Math.min(width, 860)
+    readonly property real sunCanvasSize: Math.min(256, chamberSize * 0.5)
     // Keep room for the control status beneath the orbit field.
     implicitHeight: chamberSize + 50
     focus: true
@@ -118,7 +119,7 @@ Item {
         // faint surface texture with a scene-graph rotation.
         Canvas {
             id: sun
-            width: chamber.width * 0.5
+            width: root.sunCanvasSize
             height: width
             anchors.centerIn: parent
             z: 0
@@ -146,7 +147,7 @@ Item {
             }
         }
         Canvas {
-            width: chamber.width * 0.19
+            width: root.sunCanvasSize * 0.38
             height: width
             anchors.centerIn: parent
             z: 0.1

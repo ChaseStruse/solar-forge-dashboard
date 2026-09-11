@@ -140,7 +140,9 @@ Item {
                             id: core
                             width: commandDeck.compact
                                 ? Math.min(620, commandDeck.width)
-                                : Math.min(720, commandDeck.width * 0.55)
+                                : root.activeModule === -1
+                                    ? Math.min(860, commandDeck.width * 0.82)
+                                    : Math.min(720, commandDeck.width * 0.55)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
                             y: 0
