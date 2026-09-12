@@ -7,6 +7,7 @@ QtObject {
     readonly property color backgroundColor: Color.popups.background
     readonly property color foregroundColor: Color.popups.text
     readonly property color accentColor: Color.accent
+    readonly property color secondaryAccentColor: Color.bar.active
     readonly property color urgentColor: Color.urgent
     readonly property color surfaceColor: Util.alpha(Color.popups.text, 0.08)
     readonly property color completedSurfaceColor: Util.alpha(Color.popups.text, 0.04)

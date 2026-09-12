@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import qs.Commons
 
 ShellRoot {
     TodoStore {
@@ -18,11 +19,27 @@ ShellRoot {
     DashboardTheme {
         id: theme
     }
+    FlightModesSource {
+        id: flightModes
+    }
+    WorkspaceRadarSource {
+        id: workspaceRadar
+    }
+    ReminderBridgeSource {
+        id: reminders
+    }
+    FlightModesSection {
+        id: flightModesSection
+        width: 800
+        theme: theme
+        source: flightModes
+    }
     TodoSection {
         id: taskSection
         width: 600
         theme: theme
         store: store
+        reminderSource: reminders
     }
     ForgeCore {
         id: core
@@ -52,6 +69,17 @@ ShellRoot {
                 check(store.remaining === 49, "updated count");
                 check(store.load() && store.model.count === 50, "persisted tasks");
                 check(store.model.get(49).taskId === id, "completed tasks sort last");
+                check(reminders.linkedTaskId("☀ Objective #42 · Write tests") === 42, "parse linked reminder task");
+                check(reminders.displayLabel("☀ Objective #42 · Write tests", "") === "Write tests", "clean reminder label");
+                check(reminders.consume('{"count":1,"reminders":[{"unit":"omarchy-reminder-25m-1","message":"☀ Objective #42 · Write tests","at":2000000000,"atTime":"10:00","remainingSeconds":120}]}'), "parse reminder inventory");
+                check(reminders.reminders.length === 1 && reminders.reminders[0].taskId === 42, "normalize linked reminder");
+                var activeTaskId = store.model.get(0).taskId;
+                check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
+                check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");
+                var expiredDone = false;
+                for (var taskIndex = 0; taskIndex < store.model.count; taskIndex++)
+                    if (store.model.get(taskIndex).taskId === activeTaskId) expiredDone = store.model.get(taskIndex).done;
+                check(expiredDone, "expired reminder completes objective");
                 var viewport = null;
                 for (var child of taskSection.children)
                     if (child.objectName === "todoViewport")
@@ -66,6 +94,39 @@ ShellRoot {
                 check(github.repositories.length === 0, "reject non-array");
                 github.consume('[{"name":"example","description":"<b>literal text</b>"}]');
                 check(github.repositories.length === 1, "valid repository");
+                check(flightModes.modes.length === 4, "four flight modes");
+                check(flightModes.modeById("forge").name === "FORGE", "resolve flight mode");
+                check(flightModes.modeById("missing") === null, "reject unknown flight mode");
+                check(flightModes.scriptForMode("focus").indexOf("allow-idle") >= 0, "build focus mode command");
+                check(flightModes.scriptForMode("missing") === "", "reject unknown mode command");
+                check(!flightModes.apply("missing"), "unknown flight mode is not applied");
+                check(flightModes.consumeStatus('{"stayAwake":true,"doNotDisturb":true,"nightlight":false,"powerProfile":"balanced"}'), "parse flight state");
+                check(flightModes.stayAwake && flightModes.doNotDisturb && !flightModes.nightlight, "flight booleans update");
+                check(flightModes.powerProfile === "balanced", "power profile updates");
+                check(!flightModes.consumeStatus("bad state"), "reject malformed flight state");
+                check(workspaceRadar.consume('[{"id":2,"name":"2","windows":2},{"id":1,"name":"dev","windows":1},{"id":-99,"name":"special:scratch"}]', '[{"address":"0xabc","class":"foot","title":"Terminal","workspace":{"id":1},"urgent":false},{"address":"0xdef","class":"firefox","title":"Alert","workspace":{"id":2},"urgent":true}]', '{"id":2}'), "parse workspace topology");
+                check(workspaceRadar.workspaces.length === 2, "ignore special workspaces");
+                check(workspaceRadar.workspaces[0].id === 1, "sort workspace planets");
+                check(workspaceRadar.workspaces[1].windows.length === 1, "attach window moons");
+                check(workspaceRadar.workspaces[1].urgent, "propagate urgent distress state");
+                check(workspaceRadar.focusedWorkspaceId === 2, "track focused workspace");
+                workspaceRadar.handleEvent("urgent>>0xabc");
+                check(workspaceRadar.workspaces[0].urgent, "track urgent event signal");
+                workspaceRadar.handleEvent("activewindowv2>>0xabc");
+                check(!workspaceRadar.workspaces[0].urgent, "clear distress when focused");
+                check(!workspaceRadar.focusWorkspace(-1), "reject invalid workspace action");
+                check(!workspaceRadar.focusWindow("bad-address"), "reject invalid window action");
+                check(workspaceRadar.workspaceActionCode(2) === 'hl.dsp.focus({ workspace = "2" })', "build Lua workspace action");
+                check(workspaceRadar.windowActionCode("0xabc") === 'hl.dsp.focus({ window = "address:0xabc" })', "build Lua window action");
+                check(workspaceRadar.moveWindowActionCode("0xabc", 2) === 'hl.dsp.window.move({ workspace = "2", window = "address:0xabc", follow = false })', "build Lua window move action");
+                check(workspaceRadar.closeWindowActionCode("0xabc") === 'hl.dsp.window.close({ window = "address:0xabc" })', "build Lua window close action");
+                check(workspaceRadar.workspaces[0].role === "FORGE", "infer workspace role");
+                check(!workspaceRadar.moveWindow("bad-address", 2), "reject invalid move action");
+                check(!workspaceRadar.closeWindow("bad-address"), "reject invalid close action");
+                check(!workspaceRadar.consume("bad state", "[]", "{}"), "reject malformed workspace state");
+                check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
+                check(theme.accentColor === Color.accent, "core color follows theme accent");
+                check(theme.secondaryAccentColor === Color.bar.active, "planet color follows theme secondary accent");
                 dashboard.opened = true;
                 dashboard.close();
                 dashboard.close();
@@ -83,6 +144,8 @@ ShellRoot {
                 check(dashboard.activeModule === 1, "navigation selects without toggling closed");
                 dashboard.openModule(42);
                 check(dashboard.activeModule === 1, "invalid module ignored");
+                core.moduleSelected(3);
+                check(dashboard.activeModule === 3, "toggle opens Flight Modes");
                 core.animating = true;
                 lifecycle.start();
             } catch (failure) {

@@ -13,6 +13,9 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with recent GitHub activity and live Omarchy weather
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
+- Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
+- Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
+- Mission Timer bridges objectives into Omarchy reminders with focus presets, inbound-transmission telemetry, cancellation, and completion synchronization after expiry
 
 ## Launching
 
@@ -21,7 +24,7 @@ The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
 The dashboard opens with all panels hidden. While the core has focus, press
-`T` for Objectives, `G` for GitHub, or `M` for the mission timeline; press the same key to hide the panel.
+`T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, or `W` for Workspace Radar; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
 double-clicking focuses it. Escape minimizes the active module and returns
@@ -47,6 +50,11 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `TimelineLane.qml`: shared timeline presentation for source events.
 - `SystemBriefingSource.qml`: local system-health collection and recommendations.
 - `SystemBriefing.qml`: the cinematic startup and replay briefing.
+- `FlightModesSource.qml`: Omarchy state discovery and coordinated mode commands.
+- `FlightModesSection.qml`: mode selection, live state, and keyboard controls.
+- `WorkspaceRadarSource.qml`: Hyprland workspace/window discovery and focus actions.
+- `WorkspaceRadar.qml`: orbital workspace topology and pointer interactions.
+- `ReminderBridgeSource.qml`: Omarchy reminder scheduling, discovery, cancellation, and objective linkage.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.

@@ -37,7 +37,7 @@ Item {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
                 || event.key === Qt.Key_Right || event.key === Qt.Key_Down
                 || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-            root.moduleNavigated((root.selectedModule + 1) % 3);
+            root.moduleNavigated((root.selectedModule + 1) % 5);
             event.accepted = true;
         } else if (event.key === Qt.Key_T) {
             if (!event.isAutoRepeat) root.moduleSelected(0);
@@ -47,6 +47,12 @@ Item {
             event.accepted = true;
         } else if (event.key === Qt.Key_M) {
             if (!event.isAutoRepeat) root.moduleSelected(2);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_F) {
+            if (!event.isAutoRepeat) root.moduleSelected(3);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_W) {
+            if (!event.isAutoRepeat) root.moduleSelected(4);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
@@ -138,9 +144,9 @@ Item {
                 c.fillStyle = halo;
                 c.fillRect(0, 0, width, height);
                 var surface = c.createRadialGradient(m-r*0.3, m-r*0.3, 0, m, m, r);
-                surface.addColorStop(0, "#fff9dd");
-                surface.addColorStop(0.45, "#ffe9ab");
-                surface.addColorStop(0.8, Qt.lighter(ink, 1.8));
+                surface.addColorStop(0, Qt.lighter(ink, 2.8));
+                surface.addColorStop(0.42, Qt.lighter(ink, 1.9));
+                surface.addColorStop(0.78, Qt.lighter(ink, 1.35));
                 surface.addColorStop(1, ink);
                 c.beginPath(); c.arc(m, m, r, 0, Math.PI * 2);
                 c.fillStyle = surface; c.fill();
@@ -153,6 +159,8 @@ Item {
             z: 0.1
             rotation: root.corePhase * 360 / (Math.PI * 2)
             opacity: 0.13
+            property color ink: root.theme.accentColor
+            onInkChanged: requestPaint()
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
             onPaint: {
@@ -162,16 +170,16 @@ Item {
                     c.beginPath();
                     c.arc(width/2 + Math.cos(a)*r, height/2 + Math.sin(a)*r,
                           0.7 + i % 3 * 0.4, 0, Math.PI*2);
-                    c.fillStyle = i % 2 ? "#ffffff" : "#7c361e"; c.fill();
+                    c.fillStyle = i % 2 ? Qt.lighter(ink, 2.4) : Qt.darker(ink, 1.5); c.fill();
                 }
             }
         }
 
         Repeater {
-            model: 3
+            model: 5
             Rectangle {
                 required property int index
-                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 3
+                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 5
                 width: 5 + index
                 height: width
                 radius: width / 2
@@ -179,17 +187,17 @@ Item {
                 y: root.orbitY(angle, chamber.width * 0.24) - height / 2
                 z: Math.sin(angle) < 0 ? -1 : 1
                 scale: 0.85 + Math.sin(angle) * 0.15
-                color: root.theme.accentColor
+                color: root.theme.secondaryAccentColor
                 opacity: 0.65 + Math.sin(angle) * 0.2
             }
         }
 
         Repeater {
-            model: 3
+            model: 5
             Item {
                 id: planet
                 required property int index
-                readonly property real angle: root.corePhase + index * Math.PI * 2 / 3
+                readonly property real angle: root.corePhase + index * Math.PI * 2 / 5
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
                 width: Math.max(44, chamber.width * 0.078)
@@ -204,7 +212,7 @@ Item {
                     anchors.margins: -5
                     radius: width / 2
                     color: "transparent"
-                    border.color: root.theme.accentColor
+                    border.color: root.theme.secondaryAccentColor
                     opacity: planet.selected ? 0.9 : pointer.containsMouse ? 0.5 : 0
                     scale: planet.selected ? 1.08 : 1
                     Behavior on opacity { NumberAnimation { duration: 220 } }
@@ -215,7 +223,7 @@ Item {
                     // Rotate the lighting toward the sun; keep the label upright.
                     rotation: Math.atan2(chamber.height/2 - planet.y - planet.height/2,
                                          chamber.width/2 - planet.x - planet.width/2) * 180 / Math.PI
-                    property color ink: root.theme.accentColor
+                    property color ink: root.theme.secondaryAccentColor
                     onInkChanged: requestPaint()
                     onWidthChanged: requestPaint()
                     onHeightChanged: requestPaint()
@@ -234,8 +242,8 @@ Item {
                     anchors.centerIn: parent
                     // Font Awesome checklist and GitHub marks in Omarchy's
                     // bundled Nerd Font; independent of the user's text face.
-                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : "\uf017"
-                    color: "#fff4dc"
+                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : planet.index === 3 ? "󰈐" : "󰍹"
+                    color: root.theme.foregroundColor
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
                 }
@@ -245,7 +253,11 @@ Item {
                     ? "Objectives · T to toggle · Enter to focus"
                     : planet.index === 1
                         ? "GitHub Intel · G to toggle · Enter to focus"
-                        : "Mission timeline · M to toggle · Enter to focus"
+                        : planet.index === 2
+                            ? "Mission timeline · M to toggle · Enter to focus"
+                            : planet.index === 3
+                                ? "Flight Modes · F to toggle · Enter to focus"
+                                : "Workspace Radar · W to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
@@ -272,7 +284,11 @@ Item {
                 ? "● GITHUB INTEL SELECTED  //  [ ENTER ] TO FOCUS"
                 : root.selectedModule === 2
                     ? "● MISSION TIMELINE SELECTED  //  [ ENTER ] TO FOCUS"
-                    : "● SELECT A MODULE  //  [ T ] OBJECTIVES  ·  [ G ] GITHUB  ·  [ M ] TIMELINE"
+                    : root.selectedModule === 3
+                        ? "● FLIGHT MODES SELECTED  //  [ ENTER ] TO FOCUS"
+                        : root.selectedModule === 4
+                            ? "● WORKSPACE RADAR SELECTED  //  [ ENTER ] TO FOCUS"
+                            : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT  ·  [ W ] RADAR"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11
