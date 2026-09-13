@@ -233,6 +233,8 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             source: missionSource
+                            taskStore: todos
+                            reminderSource: reminders
                             selected: root.activeModule === 2
                             visible: root.activeModule === 2
                             onDismissRequested: root.releaseFocus()

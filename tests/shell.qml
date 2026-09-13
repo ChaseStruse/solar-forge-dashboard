@@ -28,6 +28,17 @@ ShellRoot {
     ReminderBridgeSource {
         id: reminders
     }
+    MissionControlSource {
+        id: missionSource
+    }
+    MissionTimeline {
+        id: missionTimeline
+        width: 900
+        theme: theme
+        source: missionSource
+        taskStore: store
+        reminderSource: reminders
+    }
     FlightModesSection {
         id: flightModesSection
         width: 800
@@ -73,6 +84,11 @@ ShellRoot {
                 check(reminders.displayLabel("☀ Objective #42 · Write tests", "") === "Write tests", "clean reminder label");
                 check(reminders.consume('{"count":1,"reminders":[{"unit":"omarchy-reminder-25m-1","message":"☀ Objective #42 · Write tests","at":2000000000,"atTime":"10:00","remainingSeconds":120}]}'), "parse reminder inventory");
                 check(reminders.reminders.length === 1 && reminders.reminders[0].taskId === 42, "normalize linked reminder");
+                check(missionTimeline.outstandingTasks(5).length === 5, "mission control limits outstanding task summary");
+                check(missionTimeline.outstandingTasks(5)[0].title === "Task 1", "mission control skips completed tasks");
+                check(missionTimeline.upcomingReminders(5).length === 1, "mission control shows upcoming reminders");
+                check(missionTimeline.upcomingReminders(5)[0].label === "Write tests", "mission control cleans reminder labels");
+                check(missionTimeline.countdown(Date.now() + 120000).indexOf("m") > 0, "mission control formats reminder countdown");
                 var activeTaskId = store.model.get(0).taskId;
                 check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
                 check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");
