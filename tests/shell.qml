@@ -114,6 +114,8 @@ ShellRoot {
                 check(themeReactorSection.selectedIndex === 1, "theme reactor keyboard selection advances");
                 themeReactorSection.moveSelection(1);
                 check(themeReactorSection.selectedIndex === 0, "theme reactor keyboard selection wraps");
+                themeReactorSection.moveSelection(-15);
+                check(themeReactorSection.selectedIndex === 1, "page navigation wraps across small theme inventories");
                 themeReactorSection.selectedIndex = 1;
                 check(themeReactorSection.selectActiveTheme() && themeReactorSection.selectedIndex === 0, "theme reactor keyboard returns to active theme");
                 check(readiness.consume('{"cpuPercent":32,"memoryPercent":48,"gpuPercent":12,"gpuTemperature":51,"gpuName":"Test GPU","diskPercent":61,"batteryPresent":true,"batteryPercent":78,"batteryStatus":"Discharging","acOnline":false,"powerWatts":8.4,"powerProfile":"balanced","updatesAvailable":false,"networkOnline":true,"networkName":"Test WiFi","bluetoothPowered":true,"bluetoothConnected":false}'), "parse readiness telemetry");

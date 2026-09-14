@@ -11,7 +11,9 @@ cp "$project_dir/tests/shell.qml" "$test_dir/shell.qml"
 ln -s /usr/share/omarchy/shell/Commons "$test_dir/Commons"
 ln -s /usr/share/omarchy/shell/Ui "$test_dir/Ui"
 mkdir -m 700 "$test_dir/runtime"
+touch "$test_dir/bindings.lua"
 QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME=generic QT_QUICK_CONTROLS_STYLE=Basic \
+  SOLAR_FORGE_BINDINGS_FILE="$test_dir/bindings.lua" SOLAR_FORGE_ACTIVE_BINDINGS_JSON='[]' \
   XDG_DATA_HOME="$test_dir/data" XDG_RUNTIME_DIR="$test_dir/runtime" \
   timeout 20s quickshell -p "$test_dir/shell.qml" 2>&1 | tee "$test_dir/test.log"
 rg -q SOLAR_FORGE_TESTS_PASSED "$test_dir/test.log"

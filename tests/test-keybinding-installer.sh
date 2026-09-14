@@ -18,4 +18,11 @@ occupied='[{"modmask":72,"key":"D","submap":"","description":"Existing binding"}
 SOLAR_FORGE_BINDINGS_FILE="$occupied_file" SOLAR_FORGE_ACTIVE_BINDINGS_JSON="$occupied" bash "$installer" >/dev/null
 ! rg -q 'Solar Forge Dashboard' "$occupied_file"
 
+for invalid in 'not json' '{}' 'null'; do
+  SOLAR_FORGE_BINDINGS_FILE="$occupied_file" SOLAR_FORGE_ACTIVE_BINDINGS_JSON="$invalid" bash "$installer" >/dev/null
+  ! rg -q 'Solar Forge Dashboard' "$occupied_file"
+done
+SOLAR_FORGE_BINDINGS_FILE="$occupied_file" SOLAR_FORGE_ACTIVE_BINDINGS_JSON='[{"modmask":72,"keycode":40}]' bash "$installer" >/dev/null
+! rg -q 'Solar Forge Dashboard' "$occupied_file"
+
 echo "Keybinding installer checks passed. Test files: $test_dir"

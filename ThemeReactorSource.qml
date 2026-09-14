@@ -51,6 +51,7 @@ QtObject {
         if (!candidate || loading)
             return false
         pendingTheme = candidate.name
+        timedOut = false
         status = "RECONFIGURING REACTOR: " + pendingTheme.toUpperCase() + "…"
         actionProcess.command = ["omarchy", "theme", "set", pendingTheme]
         actionProcess.running = true
@@ -63,6 +64,7 @@ QtObject {
             return false
         pendingTheme = ""
         status = "CYCLING REACTOR BACKGROUND…"
+        timedOut = false
         actionProcess.command = ["omarchy", "theme", "bg", "next"]
         actionProcess.running = true
         deadline.restart()

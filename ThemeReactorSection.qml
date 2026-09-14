@@ -45,7 +45,8 @@ Item {
     function moveSelection(delta) {
         if (!source.themes.length)
             return
-        selectedIndex = (selectedIndex + delta + source.themes.length) % source.themes.length
+        var count = source.themes.length
+        selectedIndex = ((selectedIndex + delta) % count + count) % count
         themeGrid.positionViewAtIndex(selectedIndex, GridView.Contain)
     }
 

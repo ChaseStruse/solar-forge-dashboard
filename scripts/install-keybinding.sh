@@ -22,7 +22,12 @@ if [[ -z "$binding_json" ]]; then
   }
 fi
 
-if jq -e 'any(.[]; (.modmask // 0) == 72 and ((.key // "") | ascii_upcase) == "D" and (.submap // "") == "")' \
+if ! jq -e 'type == "array" and all(.[]; type == "object")' <<<"$binding_json" >/dev/null 2>&1; then
+  echo "keybinding skipped; active Hyprland bindings were unreadable"
+  exit 0
+fi
+
+if jq -e 'any(.[]; (.modmask // 0) == 72 and (((.key // "") | ascii_upcase) == "D" or (.keycode // 0) == 40) and (.submap // "") == "")' \
   <<<"$binding_json" >/dev/null; then
   echo "keybinding skipped; SUPER + ALT + D is already in use"
   exit 0
