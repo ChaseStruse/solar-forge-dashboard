@@ -2,6 +2,7 @@
 set -euo pipefail
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 bash "$project_dir/tests/test-keybinding-installer.sh"
+bash "$project_dir/tests/test-theme-reactor-state.sh"
 test_dir="$(mktemp -d /tmp/solar-forge-check.XXXXXX)"
 # Keep the temporary run for debugging; never use the user's real task database.
 cp "$project_dir/"*.qml "$test_dir/"

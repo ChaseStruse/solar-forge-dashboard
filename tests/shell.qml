@@ -31,6 +31,15 @@ ShellRoot {
     MissionControlSource {
         id: missionSource
     }
+    ThemeReactorSource {
+        id: themeReactor
+    }
+    ThemeReactorSection {
+        id: themeReactorSection
+        width: 900
+        theme: theme
+        source: themeReactor
+    }
     MissionTimeline {
         id: missionTimeline
         width: 900
@@ -89,6 +98,13 @@ ShellRoot {
                 check(missionTimeline.upcomingReminders(5).length === 1, "mission control shows upcoming reminders");
                 check(missionTimeline.upcomingReminders(5)[0].label === "Write tests", "mission control cleans reminder labels");
                 check(missionTimeline.countdown(Date.now() + 120000).indexOf("m") > 0, "mission control formats reminder countdown");
+                check(themeReactor.consume('{"currentTheme":"Cyberpunking","wallpaperPath":"","wallpaperName":"Neon City","themes":[{"id":"cyberpunking","name":"Cyberpunking","accent":"#26e6ff","secondary":"#ff65d9","background":"#0b101b","backgroundCount":3,"current":true},{"id":"nord","name":"Nord","accent":"#88c0d0","secondary":"#b48ead","background":"#2e3440","backgroundCount":2,"current":false}]}'), "parse theme reactor inventory");
+                check(themeReactor.themes.length === 2, "theme reactor lists installed themes");
+                check(themeReactor.themeByName("Nord").accent === "#88c0d0", "theme reactor resolves theme identity");
+                check(themeReactor.themeByName("Missing") === null, "theme reactor rejects unknown theme");
+                check(!themeReactor.applyTheme("Missing"), "unknown theme is not applied");
+                check(themeReactor.wallpaperName === "Neon City", "theme reactor exposes wallpaper identity");
+                check(themeReactorSection.implicitHeight > 0, "theme reactor panel lays out");
                 var activeTaskId = store.model.get(0).taskId;
                 check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
                 check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");
@@ -162,6 +178,8 @@ ShellRoot {
                 check(dashboard.activeModule === 1, "invalid module ignored");
                 core.moduleSelected(3);
                 check(dashboard.activeModule === 3, "toggle opens Flight Modes");
+                core.moduleSelected(5);
+                check(dashboard.activeModule === 5, "toggle opens Theme Reactor");
                 core.animating = true;
                 lifecycle.start();
             } catch (failure) {

@@ -13,6 +13,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
 - Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
+- Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
@@ -32,7 +33,7 @@ duplicate the entry. Use either the shortcut or the sun icon to toggle the
 dashboard.
 
 The dashboard opens with all panels hidden. While the core has focus, press
-`T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, or `W` for Workspace Radar; press the same key to hide the panel.
+`T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, `W` for Workspace Radar, or `R` for Theme Reactor; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
 double-clicking focuses it. Escape minimizes the active module and returns
@@ -63,6 +64,8 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `WorkspaceRadarSource.qml`: Hyprland workspace/window discovery and focus actions.
 - `WorkspaceRadar.qml`: orbital workspace topology and pointer interactions.
 - `ReminderBridgeSource.qml`: Omarchy reminder scheduling, discovery, cancellation, and objective linkage.
+- `ThemeReactorSource.qml`: installed-theme discovery and supported Omarchy theme/background actions.
+- `ThemeReactorSection.qml`: stellar theme picker and holographic wallpaper preview.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.
