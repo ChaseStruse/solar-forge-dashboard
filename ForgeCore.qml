@@ -19,7 +19,7 @@ Item {
     readonly property real chamberSize: Math.min(width, 860)
     readonly property real sunCanvasSize: Math.min(256, chamberSize * 0.5)
     // Keep room for the control status beneath the orbit field.
-    implicitHeight: chamberSize + 50
+    implicitHeight: chamber.height + navigation.implicitHeight + telemetry.implicitHeight + 48
     focus: true
 
     function focusPicker() {
@@ -78,11 +78,11 @@ Item {
     Item {
         id: chamber
         width: root.chamberSize
-        height: width
+        height: width * 0.66
         anchors.horizontalCenter: parent.horizontalCenter
 
         Repeater {
-            model: 48
+            model: 24
             Rectangle {
                 required property int index
                 width: index % 9 === 0 ? 2 : 1
@@ -107,7 +107,7 @@ Item {
             onPaint: {
                 var c = getContext("2d");
                 c.reset();
-                for (var ring of [0.24, 0.38]) {
+                for (var ring of [0.38]) {
                     for (var front = 0; front < 2; front++) {
                         c.beginPath();
                         for (var i = 0; i <= 100; i++) {
@@ -142,8 +142,8 @@ Item {
                 c.reset();
                 var m = width / 2, r = width * 0.19;
                 var halo = c.createRadialGradient(m, m, r * 0.65, m, m, m);
-                halo.addColorStop(0, Qt.rgba(ink.r, ink.g, ink.b, 0.7));
-                halo.addColorStop(0.36, Qt.rgba(ink.r, ink.g, ink.b, 0.22));
+                halo.addColorStop(0, Qt.rgba(ink.r, ink.g, ink.b, 0.24));
+                halo.addColorStop(0.36, Qt.rgba(ink.r, ink.g, ink.b, 0.06));
                 halo.addColorStop(1, Qt.rgba(ink.r, ink.g, ink.b, 0));
                 c.fillStyle = halo;
                 c.fillRect(0, 0, width, height);
@@ -190,6 +190,7 @@ Item {
         Repeater {
             model: 6
             Rectangle {
+                visible: false
                 required property int index
                 readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 6
                 width: 5 + index
@@ -288,10 +289,59 @@ Item {
         }
     }
 
-    Text {
+    Flow {
+        id: navigation
         anchors.top: chamber.bottom
-        anchors.topMargin: 10
+        anchors.topMargin: 12
         anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width
+        spacing: 8
+        Repeater {
+            model: ["T  Tasks", "G  GitHub", "M  Mission", "F  Flight", "W  Radar", "R  Themes"]
+            delegate: Button {
+                required property string modelData
+                required property int index
+                text: modelData
+                onClicked: root.moduleSelected(index)
+                background: Rectangle {
+                    radius: 6
+                    color: parent.hovered || root.selectedModule === parent.index ? root.theme.surfaceColor : "transparent"
+                    border.color: root.selectedModule === parent.index ? root.theme.accentColor : "transparent"
+                }
+                contentItem: Text {
+                    text: parent.text
+                    color: root.theme.dimmedTextColor
+                    font.family: Style.font.menuFamily
+                    font.pixelSize: 11
+                }
+            }
+        }
+    }
+    Flow {
+        id: telemetry
+        anchors.top: navigation.bottom
+        anchors.topMargin: 16
+        width: parent.width
+        spacing: 14
+        Repeater {
+            model: root.readinessSource.metrics
+            Text {
+                required property var modelData
+                text: modelData.label + "  " + modelData.value
+                color: modelData.warning ? root.theme.urgentColor : root.theme.dimmedTextColor
+                font.family: Style.font.menuFamily
+                font.pixelSize: 11
+            }
+        }
+        Text {
+            text: root.readinessSource.powerSummary
+            color: root.theme.faintTextColor
+            font.family: Style.font.menuFamily
+            font.pixelSize: 10
+        }
+    }
+    Text {
+        visible: false
         text: root.selectedModule === 0
             ? "● OBJECTIVES SELECTED  //  [ ENTER ] TO FOCUS"
             : root.selectedModule === 1

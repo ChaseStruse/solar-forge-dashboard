@@ -54,6 +54,7 @@ Item {
     }
 
     Column {
+        visible: false
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: 6
@@ -61,6 +62,7 @@ Item {
         Text { anchors.horizontalCenter: parent.horizontalCenter; text: root.metricAt(0).label + " " + root.metricAt(0).value + "  ·  " + root.metricAt(1).label + " " + root.metricAt(1).value; color: root.metricAt(0).warning || root.metricAt(1).warning ? root.theme.urgentColor : root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true }
     }
     Text {
+        visible: false
         anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
         text: root.metricAt(2).label + " " + root.metricAt(2).value + "\n" + root.metricAt(3).label + " " + root.metricAt(3).value
         horizontalAlignment: Text.AlignLeft
@@ -68,6 +70,7 @@ Item {
         font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true
     }
     Text {
+        visible: false
         anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
         text: root.metricAt(6).label + " " + root.metricAt(6).value + "\n" + root.metricAt(7).label + " " + root.metricAt(7).value
         horizontalAlignment: Text.AlignRight
@@ -75,6 +78,7 @@ Item {
         font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true
     }
     Column {
+        visible: false
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 4

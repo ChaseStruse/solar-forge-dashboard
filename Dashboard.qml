@@ -163,19 +163,19 @@ Item {
                     Text {
                         width: parent.width
                         wrapMode: Text.Wrap
-                        text: "SOLAR FORGE // PERSONAL COMMAND CENTER"
+                        text: "SOLAR FORGE"
                         color: dashboardTheme.accentColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 14
+                        font.pixelSize: 20
                         font.letterSpacing: 2.4
                     }
                     Text {
                         width: parent.width
                         wrapMode: Text.Wrap
-                        text: Qt.formatDateTime(clock.date, "dddd, MMMM d, yyyy  //  HH:mm")
+                        text: Qt.formatDateTime(clock.date, "ddd, MMM d   ·   HH:mm")
                         color: dashboardTheme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 18
+                        font.pixelSize: 12
                     }
                     Rectangle {
                         width: parent.width
@@ -186,7 +186,7 @@ Item {
                     Item {
                         id: commandDeck
                         width: parent.width
-                        readonly property bool compact: width < 780
+                        readonly property bool compact: true
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
@@ -205,7 +205,7 @@ Item {
                         ForgeCore {
                             id: core
                             width: commandDeck.compact
-                                ? Math.min(620, commandDeck.width)
+                                ? Math.min(560, commandDeck.width)
                                 : Math.min(860, commandDeck.width * 0.82)
                             height: implicitHeight
                             x: (commandDeck.width - width) / 2
@@ -298,7 +298,8 @@ Item {
                         }
                     }
                     Text {
-                        text: "[ ESC ] return focus to core"
+                        visible: root.activeModule >= 0
+                        text: "Esc   Return to orbit"
                         color: dashboardTheme.faintTextColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 13
@@ -309,6 +310,7 @@ Item {
             AmbientLayer {
                 anchors.fill: parent
                 visible: root.opened
+                opacity: 0.3
                 z: 10
             }
             SystemBriefing {
