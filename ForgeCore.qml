@@ -6,6 +6,7 @@ import qs.Commons
 Item {
     id: root
     required property DashboardTheme theme
+    required property SystemReadinessSource readinessSource
     property bool animating: false
     property bool pointerPaused: false
     onAnimatingChanged: if (!animating) pointerPaused = false
@@ -15,6 +16,8 @@ Item {
     signal moduleNavigated(int module)
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
+    readonly property real innerModuleOrbit: 0.33
+    readonly property real outerModuleOrbit: 0.45
     readonly property real chamberSize: Math.min(width, 860)
     readonly property real sunCanvasSize: Math.min(256, chamberSize * 0.5)
     // Keep room for the control status beneath the orbit field.
@@ -37,7 +40,7 @@ Item {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
                 || event.key === Qt.Key_Right || event.key === Qt.Key_Down
                 || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-            root.moduleNavigated((root.selectedModule + 1) % 5);
+            root.moduleNavigated((root.selectedModule + 1) % 6);
             event.accepted = true;
         } else if (event.key === Qt.Key_T) {
             if (!event.isAutoRepeat) root.moduleSelected(0);
@@ -53,6 +56,9 @@ Item {
             event.accepted = true;
         } else if (event.key === Qt.Key_W) {
             if (!event.isAutoRepeat) root.moduleSelected(4);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_R) {
+            if (!event.isAutoRepeat) root.moduleSelected(5);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
@@ -103,7 +109,7 @@ Item {
             onPaint: {
                 var c = getContext("2d");
                 c.reset();
-                for (var ring of [0.24, 0.38]) {
+                for (var ring of [0.24, root.innerModuleOrbit, root.outerModuleOrbit]) {
                     for (var front = 0; front < 2; front++) {
                         c.beginPath();
                         for (var i = 0; i <= 100; i++) {
@@ -152,6 +158,14 @@ Item {
                 c.fillStyle = surface; c.fill();
             }
         }
+        ReadinessRing {
+            width: Math.min(292, chamber.width * 0.43)
+            height: width
+            anchors.centerIn: parent
+            z: 0.5
+            theme: root.theme
+            source: root.readinessSource
+        }
         Canvas {
             width: root.sunCanvasSize * 0.38
             height: width
@@ -176,10 +190,10 @@ Item {
         }
 
         Repeater {
-            model: 5
+            model: 6
             Rectangle {
                 required property int index
-                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 5
+                readonly property real angle: root.corePhase * 2 + index * Math.PI * 2 / 6
                 width: 5 + index
                 height: width
                 radius: width / 2
@@ -193,17 +207,24 @@ Item {
         }
 
         Repeater {
-            model: 5
+            model: 6
             Item {
                 id: planet
                 required property int index
-                readonly property real angle: root.corePhase + index * Math.PI * 2 / 5
+                // Alternate modules between two three-planet orbits. Integer
+                // speeds preserve the seamless animation loop.
+                readonly property bool innerOrbit: index % 2 === 0
+                readonly property real orbitRadius: chamber.width * (innerOrbit
+                    ? root.innerModuleOrbit : root.outerModuleOrbit)
+                readonly property real angle: root.corePhase * (innerOrbit ? 2 : 1)
+                    + Math.floor(index / 2) * Math.PI * 2 / 3
+                    + (innerOrbit ? 0 : Math.PI / 3)
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
                 width: Math.max(44, chamber.width * 0.078)
                 height: width
-                x: root.orbitX(angle, chamber.width * 0.38) - width / 2
-                y: root.orbitY(angle, chamber.width * 0.38) - height / 2
+                x: root.orbitX(angle, orbitRadius) - width / 2
+                y: root.orbitY(angle, orbitRadius) - height / 2
                 z: depth < 0 ? -1 : 2
                 scale: 0.9 + depth * 0.13
                 opacity: 0.82 + depth * 0.16
@@ -242,7 +263,7 @@ Item {
                     anchors.centerIn: parent
                     // Font Awesome checklist and GitHub marks in Omarchy's
                     // bundled Nerd Font; independent of the user's text face.
-                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : planet.index === 3 ? "󰈐" : "󰍹"
+                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : planet.index === 3 ? "󰈐" : planet.index === 4 ? "󰍹" : "󰏘"
                     color: root.theme.foregroundColor
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
@@ -257,7 +278,9 @@ Item {
                             ? "Mission timeline · M to toggle · Enter to focus"
                             : planet.index === 3
                                 ? "Flight Modes · F to toggle · Enter to focus"
-                                : "Workspace Radar · W to toggle · Enter to focus"
+                                : planet.index === 4
+                                    ? "Workspace Radar · W to toggle · Enter to focus"
+                                    : "Theme Reactor · R to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
@@ -288,7 +311,9 @@ Item {
                         ? "● FLIGHT MODES SELECTED  //  [ ENTER ] TO FOCUS"
                         : root.selectedModule === 4
                             ? "● WORKSPACE RADAR SELECTED  //  [ ENTER ] TO FOCUS"
-                            : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT  ·  [ W ] RADAR"
+                            : root.selectedModule === 5
+                                ? "● THEME REACTOR SELECTED  //  [ ENTER ] TO FOCUS"
+                                : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT  ·  [ W ] RADAR  ·  [ R ] REACTOR"
         color: root.theme.urgentColor
         font.family: Style.font.menuFamily
         font.pixelSize: 11

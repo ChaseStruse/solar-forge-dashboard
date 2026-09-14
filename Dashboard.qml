@@ -20,6 +20,8 @@ Item {
         workspaceRadarSource.refresh();
         workspaceRadarSource.startListening();
         reminders.refresh();
+        themeReactor.refresh();
+        readiness.refresh();
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -32,17 +34,17 @@ Item {
     }
 
     function selectModule(module) {
-        if (module >= 0 && module <= 4)
+        if (module >= 0 && module <= 5)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module >= 0 && module <= 4)
+        if (module >= 0 && module <= 5)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module < 0 || module > 4)
+        if (module < 0 || module > 5)
             return;
         selectModule(module);
         if (module === 0)
@@ -53,6 +55,8 @@ Item {
             flightModePanel.focusControls();
         else if (module === 4)
             workspaceRadar.forceActiveFocus();
+        else if (module === 5)
+            themeReactorPanel.focusControls();
     }
 
     // The bar derives its open state from this property. Closing never calls
@@ -90,6 +94,12 @@ Item {
         onReminderScheduled: function(taskId, unit, due) { todos.setReminder(taskId, unit, due); }
         onReminderInventoryChanged: function(items) { todos.reconcileReminders(items, Date.now()); }
     }
+    ThemeReactorSource {
+        id: themeReactor
+    }
+    SystemReadinessSource {
+        id: readiness
+    }
     SystemBriefingSource {
         id: systemSource
     }
@@ -108,6 +118,12 @@ Item {
         repeat: true
         running: root.opened
         onTriggered: reminders.refresh()
+    }
+    Timer {
+        interval: 15000
+        repeat: true
+        running: root.opened
+        onTriggered: readiness.refresh()
     }
 
     FloatingWindow {
@@ -175,7 +191,10 @@ Item {
                             ? width
                             : Math.min(280, width * 0.29)
                         height: root.activeModule >= 2
-                            ? (root.activeModule === 2 ? missionLog.implicitHeight : root.activeModule === 3 ? flightModePanel.implicitHeight : workspaceRadar.implicitHeight)
+                            ? (root.activeModule === 2 ? missionLog.implicitHeight
+                                : root.activeModule === 3 ? flightModePanel.implicitHeight
+                                : root.activeModule === 4 ? workspaceRadar.implicitHeight
+                                : themeReactorPanel.implicitHeight)
                             : compact
                             ? core.height + (root.activeModule === -1 ? 0
                                 : (root.activeModule === 0 ? tasks.implicitHeight
@@ -192,6 +211,7 @@ Item {
                             x: (commandDeck.width - width) / 2
                             y: 0
                             theme: dashboardTheme
+                            readinessSource: readiness
                             selectedModule: root.activeModule
                             animating: root.opened && visible
                             visible: root.activeModule < 2
@@ -233,6 +253,8 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             source: missionSource
+                            taskStore: todos
+                            reminderSource: reminders
                             selected: root.activeModule === 2
                             visible: root.activeModule === 2
                             onDismissRequested: root.releaseFocus()
@@ -261,6 +283,17 @@ Item {
                             source: workspaceRadarSource
                             selected: root.activeModule === 4
                             visible: root.activeModule === 4
+                            onDismissRequested: root.releaseFocus()
+                        }
+                        ThemeReactorSection {
+                            id: themeReactorPanel
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
+                            theme: dashboardTheme
+                            source: themeReactor
+                            selected: root.activeModule === 5
+                            visible: root.activeModule === 5
                             onDismissRequested: root.releaseFocus()
                         }
                     }

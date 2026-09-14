@@ -11,7 +11,10 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
-- Mission Control with recent GitHub activity and live Omarchy weather
+- Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
+- Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
+- Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
+- Persistent System Readiness Ring for resources, power, updates, and radio state with attention-only warning arcs
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
@@ -23,8 +26,21 @@ Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
+On first load, the plugin checks Hyprland's active bindings. If
+`SUPER + ALT + D` is free, it adds a clearly marked Solar Forge entry to
+`~/.config/hypr/bindings.lua`; if the shortcut is already in use, it leaves the
+configuration unchanged. The installer is idempotent, so shell reloads never
+duplicate the entry. Use either the shortcut or the sun icon to toggle the
+dashboard.
+
+Theme Reactor takes keyboard focus as soon as it opens. Use Arrow keys or
+`H/J/K/L` to navigate stars, Tab/Shift+Tab to step through them, Page Up/Page
+Down to jump rows, Home to return to the active theme, End to jump to the last
+theme, Enter or Space to apply, `B` to cycle the background, `F5` to rescan,
+and `R` or Escape to return to orbit.
+
 The dashboard opens with all panels hidden. While the core has focus, press
-`T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, or `W` for Workspace Radar; press the same key to hide the panel.
+`T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, `W` for Workspace Radar, or `R` for Theme Reactor; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
 double-clicking focuses it. Escape minimizes the active module and returns
@@ -55,6 +71,10 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `WorkspaceRadarSource.qml`: Hyprland workspace/window discovery and focus actions.
 - `WorkspaceRadar.qml`: orbital workspace topology and pointer interactions.
 - `ReminderBridgeSource.qml`: Omarchy reminder scheduling, discovery, cancellation, and objective linkage.
+- `ThemeReactorSource.qml`: installed-theme discovery and supported Omarchy theme/background actions.
+- `ThemeReactorSection.qml`: stellar theme picker and holographic wallpaper preview.
+- `SystemReadinessSource.qml`: lightweight persistent resource, power, update, and connectivity telemetry.
+- `ReadinessRing.qml`: calm core telemetry with warning arcs only for actionable states.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.
