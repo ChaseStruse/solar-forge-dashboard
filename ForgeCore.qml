@@ -15,7 +15,7 @@ Item {
     signal moduleSelected(int module)
     signal moduleNavigated(int module)
     signal moduleOpened(int module)
-    readonly property real orbitTilt: 0.78
+    readonly property real orbitTilt: 0.42
     readonly property real innerModuleOrbit: 0.33
     readonly property real outerModuleOrbit: 0.45
     readonly property real chamberSize: Math.min(width, 860)
