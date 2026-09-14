@@ -105,6 +105,13 @@ ShellRoot {
                 check(!themeReactor.applyTheme("Missing"), "unknown theme is not applied");
                 check(themeReactor.wallpaperName === "Neon City", "theme reactor exposes wallpaper identity");
                 check(themeReactorSection.implicitHeight > 0, "theme reactor panel lays out");
+                themeReactorSection.selectedIndex = 0;
+                themeReactorSection.moveSelection(1);
+                check(themeReactorSection.selectedIndex === 1, "theme reactor keyboard selection advances");
+                themeReactorSection.moveSelection(1);
+                check(themeReactorSection.selectedIndex === 0, "theme reactor keyboard selection wraps");
+                themeReactorSection.selectedIndex = 1;
+                check(themeReactorSection.selectActiveTheme() && themeReactorSection.selectedIndex === 0, "theme reactor keyboard returns to active theme");
                 var activeTaskId = store.model.get(0).taskId;
                 check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
                 check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");

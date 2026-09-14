@@ -13,12 +13,33 @@ Item {
     implicitHeight: content.implicitHeight + 48
     focus: true
 
+    onSelectedChanged: if (selected)
+        Qt.callLater(root.focusControls)
+
+    Connections {
+        target: root.source
+        function onThemesChanged() {
+            if (root.selectedIndex >= root.source.themes.length)
+                root.selectedIndex = Math.max(0, root.source.themes.length - 1)
+            if (root.selected)
+                Qt.callLater(root.selectActiveTheme)
+        }
+    }
+
     function focusControls() {
         forceActiveFocus()
-        var current = source.themeByName(source.currentTheme)
-        if (current)
-            for (var i = 0; i < source.themes.length; i++)
-                if (source.themes[i].name === current.name) selectedIndex = i
+        selectActiveTheme()
+    }
+
+    function selectActiveTheme() {
+        for (var i = 0; i < source.themes.length; i++) {
+            if (source.themes[i].current || source.themes[i].name === source.currentTheme) {
+                selectedIndex = i
+                themeGrid.positionViewAtIndex(selectedIndex, GridView.Contain)
+                return true
+            }
+        }
+        return false
     }
 
     function moveSelection(delta) {
@@ -28,21 +49,43 @@ Item {
         themeGrid.positionViewAtIndex(selectedIndex, GridView.Contain)
     }
 
+    function activateSelected() {
+        if (!source.themes[selectedIndex])
+            return false
+        return source.applyTheme(source.themes[selectedIndex].name)
+    }
+
     Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Left) {
+        if (event.key === Qt.Key_Left || event.key === Qt.Key_H) {
             moveSelection(-1); event.accepted = true
-        } else if (event.key === Qt.Key_Right) {
+        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_L || event.key === Qt.Key_Tab) {
             moveSelection(1); event.accepted = true
-        } else if (event.key === Qt.Key_Up) {
+        } else if (event.key === Qt.Key_Up || event.key === Qt.Key_K) {
             moveSelection(-themeGrid.columns); event.accepted = true
-        } else if (event.key === Qt.Key_Down) {
+        } else if (event.key === Qt.Key_Down || event.key === Qt.Key_J) {
             moveSelection(themeGrid.columns); event.accepted = true
+        } else if (event.key === Qt.Key_Backtab) {
+            moveSelection(-1); event.accepted = true
+        } else if (event.key === Qt.Key_PageUp) {
+            moveSelection(-themeGrid.columns * 3); event.accepted = true
+        } else if (event.key === Qt.Key_PageDown) {
+            moveSelection(themeGrid.columns * 3); event.accepted = true
+        } else if (event.key === Qt.Key_Home) {
+            selectActiveTheme(); event.accepted = true
+        } else if (event.key === Qt.Key_End) {
+            if (source.themes.length) {
+                selectedIndex = source.themes.length - 1
+                themeGrid.positionViewAtEnd()
+            }
+            event.accepted = true
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
-            if (source.themes[selectedIndex]) source.applyTheme(source.themes[selectedIndex].name)
+            activateSelected()
             event.accepted = true
         } else if (event.key === Qt.Key_B) {
             source.nextBackground(); event.accepted = true
-        } else if (event.key === Qt.Key_Escape) {
+        } else if (event.key === Qt.Key_F5) {
+            source.refresh(); event.accepted = true
+        } else if (event.key === Qt.Key_R || event.key === Qt.Key_Escape) {
             root.dismissRequested(); event.accepted = true
         }
     }
@@ -205,7 +248,7 @@ Item {
 
         Text {
             width: parent.width; horizontalAlignment: Text.AlignHCenter
-            text: "[ R ] RETURN TO ORBIT  ·  [ ENTER ] APPLY STAR  ·  [ B ] CYCLE BACKGROUND  ·  [ ESC ] RELEASE FOCUS"
+            text: "[ ARROWS / HJKL ] NAVIGATE  ·  [ ENTER ] APPLY  ·  [ B ] BACKGROUND  ·  [ F5 ] RESCAN  ·  [ R / ESC ] ORBIT"
             color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.letterSpacing: 0.9
         }
     }

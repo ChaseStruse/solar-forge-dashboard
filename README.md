@@ -32,6 +32,12 @@ configuration unchanged. The installer is idempotent, so shell reloads never
 duplicate the entry. Use either the shortcut or the sun icon to toggle the
 dashboard.
 
+Theme Reactor takes keyboard focus as soon as it opens. Use Arrow keys or
+`H/J/K/L` to navigate stars, Tab/Shift+Tab to step through them, Page Up/Page
+Down to jump rows, Home to return to the active theme, End to jump to the last
+theme, Enter or Space to apply, `B` to cycle the background, `F5` to rescan,
+and `R` or Escape to return to orbit.
+
 The dashboard opens with all panels hidden. While the core has focus, press
 `T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, `W` for Workspace Radar, or `R` for Theme Reactor; press the same key to hide the panel.
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
