@@ -14,6 +14,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
 - Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
 - Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
+- Persistent System Readiness Ring for resources, power, updates, and radio state with attention-only warning arcs
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
@@ -72,6 +73,8 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `ReminderBridgeSource.qml`: Omarchy reminder scheduling, discovery, cancellation, and objective linkage.
 - `ThemeReactorSource.qml`: installed-theme discovery and supported Omarchy theme/background actions.
 - `ThemeReactorSection.qml`: stellar theme picker and holographic wallpaper preview.
+- `SystemReadinessSource.qml`: lightweight persistent resource, power, update, and connectivity telemetry.
+- `ReadinessRing.qml`: calm core telemetry with warning arcs only for actionable states.
 
 Sections receive typed data/theme dependencies. Add future features as a source
 and a section, composed in Dashboard. Keep SQL and subprocesses out of views.

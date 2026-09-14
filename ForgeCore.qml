@@ -6,6 +6,7 @@ import qs.Commons
 Item {
     id: root
     required property DashboardTheme theme
+    required property SystemReadinessSource readinessSource
     property bool animating: false
     property bool pointerPaused: false
     onAnimatingChanged: if (!animating) pointerPaused = false
@@ -154,6 +155,14 @@ Item {
                 c.beginPath(); c.arc(m, m, r, 0, Math.PI * 2);
                 c.fillStyle = surface; c.fill();
             }
+        }
+        ReadinessRing {
+            width: Math.min(292, chamber.width * 0.43)
+            height: width
+            anchors.centerIn: parent
+            z: 0.5
+            theme: root.theme
+            source: root.readinessSource
         }
         Canvas {
             width: root.sunCanvasSize * 0.38

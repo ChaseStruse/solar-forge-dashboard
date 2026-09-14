@@ -34,6 +34,9 @@ ShellRoot {
     ThemeReactorSource {
         id: themeReactor
     }
+    SystemReadinessSource {
+        id: readiness
+    }
     ThemeReactorSection {
         id: themeReactorSection
         width: 900
@@ -65,6 +68,7 @@ ShellRoot {
         id: core
         width: 500
         theme: theme
+        readinessSource: readiness
         onModuleSelected: function(module) { dashboard.toggleModule(module); }
         onModuleNavigated: function(module) { dashboard.selectModule(module); }
         selectedModule: dashboard.activeModule
@@ -112,6 +116,11 @@ ShellRoot {
                 check(themeReactorSection.selectedIndex === 0, "theme reactor keyboard selection wraps");
                 themeReactorSection.selectedIndex = 1;
                 check(themeReactorSection.selectActiveTheme() && themeReactorSection.selectedIndex === 0, "theme reactor keyboard returns to active theme");
+                check(readiness.consume('{"cpuPercent":32,"memoryPercent":48,"gpuPercent":12,"gpuTemperature":51,"gpuName":"Test GPU","diskPercent":61,"batteryPresent":true,"batteryPercent":78,"batteryStatus":"Discharging","acOnline":false,"powerWatts":8.4,"powerProfile":"balanced","updatesAvailable":false,"networkOnline":true,"networkName":"Test WiFi","bluetoothPowered":true,"bluetoothConnected":false}'), "parse readiness telemetry");
+                check(readiness.metrics.length === 8, "readiness ring exposes eight telemetry arcs");
+                check(readiness.warningCount === 0, "nominal readiness has no warning arcs");
+                check(readiness.consume('{"cpuPercent":95,"memoryPercent":91,"gpuPercent":10,"gpuTemperature":50,"gpuName":"Test GPU","diskPercent":92,"batteryPresent":true,"batteryPercent":15,"batteryStatus":"Discharging","acOnline":false,"powerWatts":12,"powerProfile":"performance","updatesAvailable":true,"networkOnline":false,"networkName":"Offline","bluetoothPowered":false,"bluetoothConnected":false}'), "parse warning telemetry");
+                check(readiness.warningCount === 6, "readiness flags only actionable warning arcs");
                 var activeTaskId = store.model.get(0).taskId;
                 check(store.setReminder(activeTaskId, "omarchy-reminder-25m-123", Date.now() - 1000), "link reminder to objective");
                 check(store.reconcileReminders([], Date.now()), "reconcile expired reminder");

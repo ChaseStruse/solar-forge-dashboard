@@ -21,6 +21,7 @@ Item {
         workspaceRadarSource.startListening();
         reminders.refresh();
         themeReactor.refresh();
+        readiness.refresh();
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -96,6 +97,9 @@ Item {
     ThemeReactorSource {
         id: themeReactor
     }
+    SystemReadinessSource {
+        id: readiness
+    }
     SystemBriefingSource {
         id: systemSource
     }
@@ -114,6 +118,12 @@ Item {
         repeat: true
         running: root.opened
         onTriggered: reminders.refresh()
+    }
+    Timer {
+        interval: 15000
+        repeat: true
+        running: root.opened
+        onTriggered: readiness.refresh()
     }
 
     FloatingWindow {
@@ -201,6 +211,7 @@ Item {
                             x: (commandDeck.width - width) / 2
                             y: 0
                             theme: dashboardTheme
+                            readinessSource: readiness
                             selectedModule: root.activeModule
                             animating: root.opened && visible
                             visible: root.activeModule < 2
