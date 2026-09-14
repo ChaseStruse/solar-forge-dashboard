@@ -12,6 +12,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
+- Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
@@ -22,6 +23,13 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
+
+On first load, the plugin checks Hyprland's active bindings. If
+`SUPER + ALT + D` is free, it adds a clearly marked Solar Forge entry to
+`~/.config/hypr/bindings.lua`; if the shortcut is already in use, it leaves the
+configuration unchanged. The installer is idempotent, so shell reloads never
+duplicate the entry. Use either the shortcut or the sun icon to toggle the
+dashboard.
 
 The dashboard opens with all panels hidden. While the core has focus, press
 `T` for Objectives, `G` for GitHub, `M` for the mission timeline, `F` for Flight Modes, or `W` for Workspace Radar; press the same key to hide the panel.

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+bash "$project_dir/tests/test-keybinding-installer.sh"
 test_dir="$(mktemp -d /tmp/solar-forge-check.XXXXXX)"
 # Keep the temporary run for debugging; never use the user's real task database.
 cp "$project_dir/"*.qml "$test_dir/"
+cp -R "$project_dir/scripts" "$test_dir/scripts"
 cp "$project_dir/tests/shell.qml" "$test_dir/shell.qml"
 ln -s /usr/share/omarchy/shell/Commons "$test_dir/Commons"
 ln -s /usr/share/omarchy/shell/Ui "$test_dir/Ui"
