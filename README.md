@@ -22,11 +22,6 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 ## Launching
 
-The orbit uses a compact layout with a separate module navigation row and
-readiness telemetry strip. Task and GitHub panels open below the orbit to keep
-content clear of the planets. The central ring retains attention indicators;
-resource readings remain visible in the strip below.
-
 Enable the plugin and use the sun icon in the left section of the Omarchy bar.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
