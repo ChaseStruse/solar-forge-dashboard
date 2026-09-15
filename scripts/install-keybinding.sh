@@ -4,6 +4,46 @@ set -euo pipefail
 binding_file="${SOLAR_FORGE_BINDINGS_FILE:-$HOME/.config/hypr/bindings.lua}"
 binding_json="${SOLAR_FORGE_ACTIVE_BINDINGS_JSON:-}"
 marker="-- Solar Forge Dashboard (managed by plugin)"
+binding='o.bind("SUPER + ALT + D", "Solar Forge Dashboard", "omarchy-shell shell toggle io.github.chasestruse.solar-forge-dashboard")'
+action="${1:---install}"
+
+case "$action" in
+  --status)
+    if [[ -f "$binding_file" ]] && rg -Fq -- "$marker" "$binding_file"; then
+      echo "configured"
+    else
+      echo "not-configured"
+    fi
+    exit 0
+    ;;
+  --remove)
+    [[ -f "$binding_file" ]] || {
+      echo "SUPER + ALT + D keybinding is not configured"
+      exit 0
+    }
+    if ! rg -Fq -- "$marker" "$binding_file"; then
+      echo "SUPER + ALT + D keybinding is not configured"
+      exit 0
+    fi
+    temporary_file="$(mktemp "${binding_file}.solar-forge.XXXXXX")"
+    trap 'rm -f "$temporary_file"' EXIT
+    awk -v marker="$marker" -v binding="$binding" '
+      $0 == marker { skip_binding = 1; next }
+      skip_binding && $0 == binding { skip_binding = 0; next }
+      { skip_binding = 0; print }
+    ' "$binding_file" >"$temporary_file"
+    chmod --reference="$binding_file" "$temporary_file"
+    mv -- "$temporary_file" "$binding_file"
+    trap - EXIT
+    echo "removed SUPER + ALT + D keybinding"
+    exit 0
+    ;;
+  --install) ;;
+  *)
+    echo "usage: $0 [--install|--remove|--status]" >&2
+    exit 2
+    ;;
+esac
 
 [[ -f "$binding_file" ]] || {
   echo "keybinding skipped; Hyprland user bindings file was not found"
@@ -35,7 +75,7 @@ fi
 
 printf '\n%s\n%s\n' \
   "$marker" \
-  'o.bind("SUPER + ALT + D", "Solar Forge Dashboard", "omarchy-shell shell toggle io.github.chasestruse.solar-forge-dashboard")' \
+  "$binding" \
   >>"$binding_file"
 
 echo "installed SUPER + ALT + D keybinding"
