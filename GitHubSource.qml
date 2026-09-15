@@ -6,6 +6,7 @@ QtObject {
     id: root
     property var repositories: []
     property var actionItems: []
+    property var profileStats: []
     property string viewerLogin: ""
     property string status: "GITHUB NOT YET LOADED"
     property string refreshedAt: ""
@@ -69,8 +70,22 @@ QtObject {
                 throw new Error("Expected GitHub intelligence object");
 
             viewerLogin = String(payload.viewer.login || "");
-            repositories = array(payload.viewer.repositories && payload.viewer.repositories.nodes)
-                .filter(function(row) { return row && typeof row.name === "string"; }).slice(0, 4);
+            var ownedRepositories = array(payload.viewer.repositories && payload.viewer.repositories.nodes)
+                .filter(function(row) { return row && typeof row.name === "string"; });
+            repositories = ownedRepositories.slice(0, 4);
+            var starsEarned = ownedRepositories.reduce(function(total, repository) {
+                return total + Number(repository.stargazerCount || 0);
+            }, 0);
+            profileStats = [
+                { label: "FOLLOWERS", value: Number(payload.viewer.followers && payload.viewer.followers.totalCount || 0) },
+                { label: "STARS EARNED", value: starsEarned },
+                { label: "OWNED REPOS", value: Number(payload.viewer.repositories && payload.viewer.repositories.totalCount || ownedRepositories.length) },
+                { label: "FOLLOWING", value: Number(payload.viewer.following && payload.viewer.following.totalCount || 0) },
+                { label: "YEAR CONTRIBUTIONS", value: Number(payload.viewer.contributionsCollection && payload.viewer.contributionsCollection.contributionCalendar
+                    && payload.viewer.contributionsCollection.contributionCalendar.totalContributions || 0) },
+                { label: "OPEN PRS", value: Number(payload.viewer.pullRequests && payload.viewer.pullRequests.totalCount
+                    || array(payload.viewer.pullRequests && payload.viewer.pullRequests.nodes).length) }
+            ];
 
             var candidates = [];
             array(payload.viewer.pullRequests && payload.viewer.pullRequests.nodes).forEach(function(pr) {
@@ -138,6 +153,7 @@ QtObject {
         } catch (failure) {
             repositories = [];
             actionItems = [];
+            profileStats = [];
             status = "GITHUB RESPONSE UNREADABLE";
             console.warn("Solar Forge GitHub response error:", failure);
             return false;
@@ -164,6 +180,7 @@ QtObject {
             if (exitCode !== 0) {
                 root.repositories = [];
                 root.actionItems = [];
+                root.profileStats = [];
                 root.status = "GITHUB CLI UNAVAILABLE — CHECK gh auth status";
             } else
                 root.consume(output.text);
