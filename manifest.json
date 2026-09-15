@@ -15,6 +15,6 @@
     "description": "Open the Solar Forge command center",
     "category": "Productivity",
     "allowMultiple": false,
-    "defaultSection": "left"
+    "defaultSection": "center"
   }
 }

@@ -7,7 +7,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Live date and time
 - Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
 - Up to four GitHub repositories returned by `gh repo list`
-- Bar-launcher icon for the dashboard
+- Bar-launcher icon placed in the center section immediately after weather on first enable
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
@@ -22,7 +22,8 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 ## Launching
 
-Enable the plugin and use the sun icon in the left section of the Omarchy bar.
+Enable the plugin and use the sun icon in the center section of the Omarchy bar,
+immediately to the right of the weather widget in the standard layout.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 

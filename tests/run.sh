@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+jq -e '
+  .barWidget.defaultSection == "center"
+' "$project_dir/manifest.json" >/dev/null
 bash "$project_dir/tests/test-keybinding-installer.sh"
 bash "$project_dir/tests/test-theme-reactor-state.sh"
 test_dir="$(mktemp -d /tmp/solar-forge-check.XXXXXX)"
