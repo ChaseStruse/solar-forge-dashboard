@@ -191,18 +191,14 @@ Item {
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
-                        height: root.activeModule >= 1
-                            ? (root.activeModule === 1 ? projects.implicitHeight
+                        height: root.activeModule >= 0
+                            ? (root.activeModule === 0 ? tasks.implicitHeight
+                                : root.activeModule === 1 ? projects.implicitHeight
                                 : root.activeModule === 2 ? missionLog.implicitHeight
                                 : root.activeModule === 3 ? flightModePanel.implicitHeight
                                 : root.activeModule === 4 ? workspaceRadar.implicitHeight
                                 : themeReactorPanel.implicitHeight)
-                            : compact
-                            ? core.height + (root.activeModule === -1 ? 0
-                                : (root.activeModule === 0 ? tasks.implicitHeight
-                                    : root.activeModule === 1 ? projects.implicitHeight
-                                    : root.activeModule === 2 ? missionLog.implicitHeight : flightModePanel.implicitHeight) + 32)
-                            : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
+                            : core.height
 
                         ForgeCore {
                             id: core
@@ -217,7 +213,7 @@ Item {
                             githubSource: github
                             selectedModule: root.activeModule
                             animating: root.opened && visible
-                            visible: root.activeModule < 1
+                            visible: root.activeModule < 0
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -225,10 +221,9 @@ Item {
                         TodoSection {
                             id: tasks
                             z: 2
-                            width: commandDeck.branchWidth
-                            y: commandDeck.compact
-                                ? core.height + 28
-                                : (commandDeck.height - height) / 2
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
                             theme: dashboardTheme
                             store: todos
                             reminderSource: reminders

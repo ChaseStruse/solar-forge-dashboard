@@ -141,11 +141,8 @@ ShellRoot {
                 for (var taskIndex = 0; taskIndex < store.model.count; taskIndex++)
                     if (store.model.get(taskIndex).taskId === activeTaskId) expiredDone = store.model.get(taskIndex).done;
                 check(expiredDone, "expired reminder completes objective");
-                var viewport = null;
-                for (var child of taskSection.children)
-                    if (child.objectName === "todoViewport")
-                        viewport = child;
-                check(viewport !== null && viewport.height === 130, "three-row viewport with 50 tasks");
+                var viewport = taskSection.viewport;
+                check(viewport !== null && viewport.visibleRows === 6, "six-row objective viewport");
                 check(viewport.count === 50, "all tasks accessible");
                 check(github.consume('{"viewer":{"login":"pilot","followers":{"totalCount":12},"following":{"totalCount":8},"starredRepositories":{"totalCount":21},"contributionsCollection":{"contributionCalendar":{"totalContributions":144}},"repositories":{"totalCount":3,"nodes":[{"name":"forge","nameWithOwner":"pilot/forge","description":"Ship it","url":"https://github.com/pilot/forge","pushedAt":"2026-09-14T10:00:00Z","isPrivate":false,"stargazerCount":5}]},"pullRequests":{"totalCount":1,"nodes":[{"title":"Repair reactor","url":"https://github.com/pilot/forge/pull/7","updatedAt":"2026-09-14T11:00:00Z","isDraft":false,"mergeable":"MERGEABLE","reviewDecision":"APPROVED","repository":{"nameWithOwner":"pilot/forge"},"commits":{"nodes":[{"commit":{"statusCheckRollup":{"state":"SUCCESS"}}}]}}]}},"reviewRequests":[{"title":"Inspect shields","url":"https://github.com/crew/core/pull/9","updatedAt":"2026-09-14T12:00:00Z","repository":{"nameWithOwner":"crew/core"}}],"assignedIssues":[],"notifications":[]}'), "parse GitHub intelligence");
                 check(github.repositories.length === 1, "GitHub fallback repositories");
