@@ -5,14 +5,14 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 ## Current features
 
 - Live date and time
-- Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
-- Up to four GitHub repositories returned by `gh repo list`
-- Bar-launcher icon for the dashboard
+- Full-width Objectives Command Center with active, closed, reminder, and total telemetry; add tasks with `Enter` and click to complete
+- Full-width GitHub Command Center with profile telemetry, prioritized developer actions, and recent repository pulse
+- Bar-launcher icon placed in the center section immediately after weather on first enable
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
-- Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
+- Optional `SUPER + ALT + D` dashboard keybinding, enabled explicitly from the dashboard
 - Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
 - Persistent System Readiness Ring for resources, power, updates, and radio state with attention-only warning arcs
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
@@ -22,16 +22,17 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 ## Launching
 
-Enable the plugin and use the sun icon in the left section of the Omarchy bar.
+Enable the plugin and use the sun icon in the center section of the Omarchy bar,
+immediately to the right of the weather widget in the standard layout.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
-On first load, the plugin checks Hyprland's active bindings. If
-`SUPER + ALT + D` is free, it adds a clearly marked Solar Forge entry to
-`~/.config/hypr/bindings.lua`; if the shortcut is already in use, it leaves the
-configuration unchanged. The installer is idempotent, so shell reloads never
-duplicate the entry. Use either the shortcut or the sun icon to toggle the
-dashboard.
+The bar icon works without changing your Hyprland configuration. To add the
+optional `SUPER + ALT + D` shortcut, open the dashboard and select **ENABLE
+SHORTCUT** in its footer. Solar Forge first checks the active bindings and will
+not replace an existing shortcut. The same control removes only the clearly
+marked Solar Forge entry. Use either the shortcut or the sun icon to toggle the
+dashboard after enabling it.
 
 Theme Reactor takes keyboard focus as soon as it opens. Use Arrow keys or
 `H/J/K/L` to navigate stars, Tab/Shift+Tab to step through them, Page Up/Page
@@ -49,17 +50,67 @@ Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
 
-Solar Forge reads repository metadata through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. If `gh` is unavailable or signed out, the GitHub panel shows an actionable offline status.
+Solar Forge reads action signals through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. It prioritizes failed checks on your pull requests, review requests, merge-ready or blocked pull requests, relevant unread notifications, and assigned issues. The full-width Command Center also shows followers, stars earned across owned repositories, owned repository count, following, yearly contributions, open pull requests, and recently active repositories.
+
+Open the GitHub planet with `G`, use Arrow keys or `H/J/K/L` to select an item,
+press Enter or Space to open it on GitHub, and press `F5` to refresh. The planet
+badge shows the total number of items needing attention. If `gh` is unavailable
+or signed out, the panel shows an actionable authentication status.
+
+## Install
+
+Solar Forge requires Omarchy with the Quattro shell and a working Quickshell
+installation. Install and enable the plugin directly from its public repository:
+
+```bash
+omarchy plugin add https://github.com/ChaseStruse/solar-forge-dashboard.git --enable
+```
+
+Restart the shell if the bar does not refresh immediately:
+
+```bash
+omarchy-shell restart
+```
+
+## Requirements and capabilities
+
+The core dashboard uses commands normally provided by Omarchy and its Arch
+Linux environment, including Bash, `jq`, `curl`, Hyprland tools, and
+`systemctl --user`. The GitHub Command Center additionally requires the GitHub
+CLI (`gh`) and a locally authenticated account. The keybinding helper uses
+`rg`. No command is run with `sudo` or `pkexec`.
+
+Solar Forge reads local system, workspace, theme, reminder, and weather state.
+Weather requests use `wttr.in`; GitHub data is requested through your local
+`gh` authentication. Tasks are stored locally through Qt's SQLite storage. The
+plugin only changes themes, backgrounds, flight-mode settings, reminders,
+workspace windows, or the optional shortcut after a corresponding user action.
+
+## Remove
+
+If you enabled the optional shortcut, remove it first from the dashboard footer
+or run:
+
+```bash
+bash "$HOME/.config/omarchy/plugins/io.github.chasestruse.solar-forge-dashboard/scripts/install-keybinding.sh" --remove
+```
+
+Then remove the plugin:
+
+```bash
+omarchy plugin remove io.github.chasestruse.solar-forge-dashboard
+```
 
 ## Code structure
 
 - `BarWidget.qml`: launcher and the lifecycle methods Omarchy calls.
 - `Dashboard.qml`: window, page layout, and section composition.
 - `DashboardTheme.qml`: live Omarchy theme bindings shared by all sections.
-- `TodoStore.qml`: SQLite access, task model, active count, and storage errors.
-- `TodoSection.qml`: task input and the virtualized three-row list.
-- `GitHubSource.qml`: CLI requests, timeout, response validation, and status.
-- `GitHubSection.qml`: repository presentation.
+- `TodoStore.qml`: SQLite access, task model, active/closed/total telemetry, and storage errors.
+- `TodoSection.qml`: full-width objective queue, telemetry, reminder controls, and inbound transmissions.
+- `GitHubSource.qml`: shared action prioritization, timeout, response validation, and status.
+- `GitHubSection.qml`: keyboard-accessible action inbox and repository fallback.
+- `scripts/github-intelligence.sh`: bounded GitHub GraphQL and notification collection.
 - `ForgeCore.qml`: orbital rendering, animation lifecycle, and module controls.
 - `MissionControlSource.qml`: GitHub activity and Omarchy weather requests.
 - `MissionTimeline.qml`: the live GitHub and weather command surface.
@@ -97,7 +148,7 @@ git diff --check
 ```
 
 The offscreen regression harness tests task persistence/counts/sorting, blank
-input, a 50-task three-row viewport, malformed GitHub responses, and repeatable
+input, a 50-task six-row viewport, objective telemetry, GitHub action prioritization and malformed responses, and repeatable
 close/reopen state, module selection, and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
 requests. Temporary test output is retained at the path printed by the runner.
 

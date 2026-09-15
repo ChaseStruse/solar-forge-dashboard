@@ -8,6 +8,9 @@ QtObject {
     property string error: ""
     property int remaining: 0
     readonly property ListModel model: ListModel {}
+    readonly property int totalCount: model.count
+    readonly property int activeCount: remaining
+    readonly property int closedCount: Math.max(0, totalCount - activeCount)
 
     function database() {
         return LocalStorage.openDatabaseSync(databaseName, "1.0", "Solar Forge tasks", 1000000);
@@ -81,7 +84,7 @@ QtObject {
     }
 
     function setReminder(taskId, unit, due) {
-        if (!/^omarchy-reminder-[0-9]+m-[0-9]+$/.test(String(unit || "")) || Number(due) <= 0)
+        if (!/^omarchy-reminder-[0-9]+m-[0-9]+$/.test(String(unit || "")) || !isFinite(Number(due)) || Number(due) <= 0)
             return false;
         return write("UPDATE todos SET reminder_unit = ?, reminder_due = ? WHERE id = ? AND done = 0", [String(unit), Math.floor(Number(due)), taskId]);
     }

@@ -30,6 +30,7 @@ ShellRoot {
     }
     MissionControlSource {
         id: missionSource
+        githubSource: github
     }
     ThemeReactorSource {
         id: themeReactor
@@ -42,6 +43,12 @@ ShellRoot {
         width: 900
         theme: theme
         source: themeReactor
+    }
+    GitHubSection {
+        id: githubSection
+        width: 900
+        theme: theme
+        source: github
     }
     MissionTimeline {
         id: missionTimeline
@@ -69,6 +76,7 @@ ShellRoot {
         width: 500
         theme: theme
         readinessSource: readiness
+        githubSource: github
         onModuleSelected: function(module) { dashboard.toggleModule(module); }
         onModuleNavigated: function(module) { dashboard.selectModule(module); }
         selectedModule: dashboard.activeModule
@@ -88,9 +96,12 @@ ShellRoot {
                 for (var i = 0; i < 50; i++)
                     check(store.add("Task " + i), "add task");
                 check(store.remaining === 50, "remaining count");
+                check(store.totalCount === 50 && store.activeCount === 50, "task total and active telemetry");
+                check(store.closedCount === 0, "initial closed telemetry");
                 var id = store.model.get(0).taskId;
                 check(store.setDone(id, true), "complete task");
                 check(store.remaining === 49, "updated count");
+                check(store.closedCount === 1, "closed telemetry follows completion");
                 check(store.load() && store.model.count === 50, "persisted tasks");
                 check(store.model.get(49).taskId === id, "completed tasks sort last");
                 check(reminders.linkedTaskId("☀ Objective #42 · Write tests") === 42, "parse linked reminder task");
@@ -130,20 +141,29 @@ ShellRoot {
                 for (var taskIndex = 0; taskIndex < store.model.count; taskIndex++)
                     if (store.model.get(taskIndex).taskId === activeTaskId) expiredDone = store.model.get(taskIndex).done;
                 check(expiredDone, "expired reminder completes objective");
-                var viewport = null;
-                for (var child of taskSection.children)
-                    if (child.objectName === "todoViewport")
-                        viewport = child;
-                check(viewport !== null && viewport.height === 130, "three-row viewport with 50 tasks");
+                var viewport = taskSection.viewport;
+                check(viewport !== null && viewport.visibleRows === 6, "six-row objective viewport");
                 check(viewport.count === 50, "all tasks accessible");
-                github.consume("[]");
-                check(github.status === "NO REPOSITORIES FOUND", "empty repository list");
-                github.consume("not json");
+                check(github.consume('{"viewer":{"login":"pilot","followers":{"totalCount":12},"following":{"totalCount":8},"starredRepositories":{"totalCount":21},"contributionsCollection":{"contributionCalendar":{"totalContributions":144}},"repositories":{"totalCount":3,"nodes":[{"name":"forge","nameWithOwner":"pilot/forge","description":"Ship it","url":"https://github.com/pilot/forge","pushedAt":"2026-09-14T10:00:00Z","isPrivate":false,"stargazerCount":5}]},"pullRequests":{"totalCount":1,"nodes":[{"title":"Repair reactor","url":"https://github.com/pilot/forge/pull/7","updatedAt":"2026-09-14T11:00:00Z","isDraft":false,"mergeable":"MERGEABLE","reviewDecision":"APPROVED","repository":{"nameWithOwner":"pilot/forge"},"commits":{"nodes":[{"commit":{"statusCheckRollup":{"state":"SUCCESS"}}}]}}]}},"reviewRequests":[{"title":"Inspect shields","url":"https://github.com/crew/core/pull/9","updatedAt":"2026-09-14T12:00:00Z","repository":{"nameWithOwner":"crew/core"}}],"assignedIssues":[],"notifications":[]}'), "parse GitHub intelligence");
+                check(github.repositories.length === 1, "GitHub fallback repositories");
+                check(github.profileStats.length === 6, "GitHub profile telemetry");
+                check(github.profileStats[0].value === 12, "GitHub follower count");
+                check(github.profileStats[1].value === 5, "GitHub stars earned");
+                check(github.profileStats[4].value === 144, "GitHub contribution count");
+                check(github.actionableCount === 2, "GitHub actionable count");
+                check(github.actionItems[0].kind === "REVIEW REQUEST", "review requests outrank merge-ready pull requests");
+                check(github.actionItems[1].kind === "MERGE READY", "detect merge-ready pull request");
+                check(github.status === "2 ITEMS NEED ATTENTION", "GitHub attention status");
+                check(githubSection.implicitHeight > 0, "GitHub command center lays out");
+                githubSection.selectedIndex = 0;
+                githubSection.moveSelection(1);
+                check(githubSection.selectedIndex === 1, "GitHub command center keyboard selection advances");
+                githubSection.moveSelection(1);
+                check(githubSection.selectedIndex === 0, "GitHub command center selection wraps");
+                check(!github.consume("not json"), "reject malformed GitHub response");
                 check(github.status === "GITHUB RESPONSE UNREADABLE", "invalid JSON");
-                github.consume("{}");
+                check(!github.consume("{}"), "reject missing viewer");
                 check(github.repositories.length === 0, "reject non-array");
-                github.consume('[{"name":"example","description":"<b>literal text</b>"}]');
-                check(github.repositories.length === 1, "valid repository");
                 check(flightModes.modes.length === 4, "four flight modes");
                 check(flightModes.modeById("forge").name === "FORGE", "resolve flight mode");
                 check(flightModes.modeById("missing") === null, "reject unknown flight mode");

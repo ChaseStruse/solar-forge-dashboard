@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 
 // Window and composition only. Sections own presentation; sources own data.
@@ -9,6 +10,8 @@ Item {
     property bool opened: false
     property int activeModule: -1
     property bool briefingShown: false
+    property bool shortcutConfigured: false
+    property string shortcutStatus: "SHORTCUT STATUS UNKNOWN"
 
     function open() {
         todos.load();
@@ -20,6 +23,8 @@ Item {
         workspaceRadarSource.refresh();
         workspaceRadarSource.startListening();
         reminders.refresh();
+        if (!shortcutStatusProcess.running)
+            shortcutStatusProcess.running = true;
         themeReactor.refresh();
         readiness.refresh();
         if (!briefingShown) {
@@ -71,6 +76,16 @@ Item {
         core.focusPicker();
     }
 
+    function toggleShortcut() {
+        if (shortcutManager.running)
+            return;
+        shortcutStatus = shortcutConfigured ? "REMOVING SHORTCUT…" : "INSTALLING SHORTCUT…";
+        shortcutManager.command = ["bash", shortcutScript, shortcutConfigured ? "--remove" : "--install"];
+        shortcutManager.running = true;
+    }
+
+    readonly property string shortcutScript: Qt.resolvedUrl("scripts/install-keybinding.sh").toString().replace(/^file:\/\//, "")
+
     DashboardTheme {
         id: dashboardTheme
     }
@@ -82,6 +97,7 @@ Item {
     }
     MissionControlSource {
         id: missionSource
+        githubSource: github
     }
     FlightModesSource {
         id: flightModes
@@ -124,6 +140,29 @@ Item {
         repeat: true
         running: root.opened
         onTriggered: readiness.refresh()
+    }
+    Process {
+        id: shortcutStatusProcess
+        command: ["bash", root.shortcutScript, "--status"]
+        stdout: StdioCollector { id: shortcutStatusOutput; waitForEnd: true }
+        onExited: function(code) {
+            root.shortcutConfigured = code === 0 && String(shortcutStatusOutput.text || "").trim() === "configured";
+            root.shortcutStatus = root.shortcutConfigured ? "SUPER + ALT + D ENABLED" : "OPTIONAL SHORTCUT DISABLED";
+        }
+    }
+    Process {
+        id: shortcutManager
+        stdout: StdioCollector { id: shortcutManagerOutput; waitForEnd: true }
+        onExited: function(code) {
+            var result = String(shortcutManagerOutput.text || "").trim();
+            root.shortcutStatus = code === 0 ? result.toUpperCase() : "SHORTCUT CHANGE FAILED";
+            shortcutRefreshDelay.restart();
+        }
+    }
+    Timer {
+        id: shortcutRefreshDelay
+        interval: 250
+        onTriggered: if (!shortcutStatusProcess.running) shortcutStatusProcess.running = true
     }
 
     FloatingWindow {
@@ -190,17 +229,14 @@ Item {
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
-                        height: root.activeModule >= 2
-                            ? (root.activeModule === 2 ? missionLog.implicitHeight
+                        height: root.activeModule >= 0
+                            ? (root.activeModule === 0 ? tasks.implicitHeight
+                                : root.activeModule === 1 ? projects.implicitHeight
+                                : root.activeModule === 2 ? missionLog.implicitHeight
                                 : root.activeModule === 3 ? flightModePanel.implicitHeight
                                 : root.activeModule === 4 ? workspaceRadar.implicitHeight
                                 : themeReactorPanel.implicitHeight)
-                            : compact
-                            ? core.height + (root.activeModule === -1 ? 0
-                                : (root.activeModule === 0 ? tasks.implicitHeight
-                                    : root.activeModule === 1 ? projects.implicitHeight
-                                    : root.activeModule === 2 ? missionLog.implicitHeight : flightModePanel.implicitHeight) + 32)
-                            : Math.max(core.height, tasks.implicitHeight, projects.implicitHeight)
+                            : core.height
 
                         ForgeCore {
                             id: core
@@ -212,9 +248,10 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             readinessSource: readiness
+                            githubSource: github
                             selectedModule: root.activeModule
                             animating: root.opened && visible
-                            visible: root.activeModule < 2
+                            visible: root.activeModule < 0
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -222,10 +259,9 @@ Item {
                         TodoSection {
                             id: tasks
                             z: 2
-                            width: commandDeck.branchWidth
-                            y: commandDeck.compact
-                                ? core.height + 28
-                                : (commandDeck.height - height) / 2
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
                             theme: dashboardTheme
                             store: todos
                             reminderSource: reminders
@@ -236,15 +272,14 @@ Item {
                         GitHubSection {
                             id: projects
                             z: 2
-                            width: commandDeck.branchWidth
-                            x: commandDeck.width - width
-                            y: commandDeck.compact
-                                ? core.height + 28
-                                : (commandDeck.height - height) / 2
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
                             theme: dashboardTheme
                             source: github
                             selected: root.activeModule === 1
                             visible: root.activeModule === 1
+                            onDismissRequested: root.releaseFocus()
                         }
                         MissionTimeline {
                             id: missionLog
@@ -295,6 +330,50 @@ Item {
                             selected: root.activeModule === 5
                             visible: root.activeModule === 5
                             onDismissRequested: root.releaseFocus()
+                        }
+                    }
+                    Rectangle {
+                        width: parent.width
+                        height: 42
+                        color: Util.alpha(dashboardTheme.accentColor, 0.05)
+                        border.color: dashboardTheme.borderColor
+                        border.width: 1
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 14
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: root.shortcutStatus
+                                color: dashboardTheme.dimmedTextColor
+                                font.family: Style.font.menuFamily
+                                font.pixelSize: 10
+                                font.bold: true
+                                font.letterSpacing: 0.7
+                            }
+                            Rectangle {
+                                width: shortcutAction.implicitWidth + 20
+                                height: 28
+                                radius: 4
+                                color: shortcutMouse.containsMouse ? dashboardTheme.accentColor : "transparent"
+                                border.color: dashboardTheme.accentColor
+                                Text {
+                                    id: shortcutAction
+                                    anchors.centerIn: parent
+                                    text: root.shortcutConfigured ? "DISABLE SHORTCUT" : "ENABLE SUPER + ALT + D"
+                                    color: shortcutMouse.containsMouse ? dashboardTheme.backgroundColor : dashboardTheme.accentColor
+                                    font.family: Style.font.menuFamily
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                                MouseArea {
+                                    id: shortcutMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    enabled: !shortcutManager.running
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: root.toggleShortcut()
+                                }
+                            }
                         }
                     }
                     Text {
