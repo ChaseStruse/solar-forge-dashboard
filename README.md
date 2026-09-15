@@ -6,7 +6,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 - Live date and time
 - Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
-- Up to four GitHub repositories returned by `gh repo list`
+- GitHub Action Center prioritizing failed CI, requested reviews, merge-ready or blocked pull requests, mentions, and assigned issues
 - Bar-launcher icon placed in the center section immediately after weather on first enable
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
@@ -50,7 +50,12 @@ Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
 
-Solar Forge reads repository metadata through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. If `gh` is unavailable or signed out, the GitHub panel shows an actionable offline status.
+Solar Forge reads action signals through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. It prioritizes failed checks on your pull requests, review requests, merge-ready or blocked pull requests, relevant unread notifications, and assigned issues. When the inbox is clear, the panel falls back to recent repository launch points.
+
+Open the GitHub planet with `G`, use Arrow keys or `J/K` to select an item,
+press Enter or Space to open it on GitHub, and press `F5` to refresh. The planet
+badge shows the total number of items needing attention. If `gh` is unavailable
+or signed out, the panel shows an actionable authentication status.
 
 ## Code structure
 
@@ -59,8 +64,9 @@ Solar Forge reads repository metadata through the locally installed GitHub CLI (
 - `DashboardTheme.qml`: live Omarchy theme bindings shared by all sections.
 - `TodoStore.qml`: SQLite access, task model, active count, and storage errors.
 - `TodoSection.qml`: task input and the virtualized three-row list.
-- `GitHubSource.qml`: CLI requests, timeout, response validation, and status.
-- `GitHubSection.qml`: repository presentation.
+- `GitHubSource.qml`: shared action prioritization, timeout, response validation, and status.
+- `GitHubSection.qml`: keyboard-accessible action inbox and repository fallback.
+- `scripts/github-intelligence.sh`: bounded GitHub GraphQL and notification collection.
 - `ForgeCore.qml`: orbital rendering, animation lifecycle, and module controls.
 - `MissionControlSource.qml`: GitHub activity and Omarchy weather requests.
 - `MissionTimeline.qml`: the live GitHub and weather command surface.
@@ -98,7 +104,7 @@ git diff --check
 ```
 
 The offscreen regression harness tests task persistence/counts/sorting, blank
-input, a 50-task three-row viewport, malformed GitHub responses, and repeatable
+input, a 50-task three-row viewport, GitHub action prioritization and malformed responses, and repeatable
 close/reopen state, module selection, and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
 requests. Temporary test output is retained at the path printed by the runner.
 
