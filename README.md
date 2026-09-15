@@ -12,7 +12,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Colors automatically follow the active Omarchy theme
 - Orbiting app picker with shaded planets, hover pause, and keyboard controls
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
-- Automatic `SUPER + ALT + D` dashboard keybinding when that combination is available
+- Optional `SUPER + ALT + D` dashboard keybinding, enabled explicitly from the dashboard
 - Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
 - Persistent System Readiness Ring for resources, power, updates, and radio state with attention-only warning arcs
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
@@ -27,12 +27,12 @@ immediately to the right of the weather widget in the standard layout.
 The dashboard opens as a regular window, so it participates in your usual
 Hyprland tiling layout.
 
-On first load, the plugin checks Hyprland's active bindings. If
-`SUPER + ALT + D` is free, it adds a clearly marked Solar Forge entry to
-`~/.config/hypr/bindings.lua`; if the shortcut is already in use, it leaves the
-configuration unchanged. The installer is idempotent, so shell reloads never
-duplicate the entry. Use either the shortcut or the sun icon to toggle the
-dashboard.
+The bar icon works without changing your Hyprland configuration. To add the
+optional `SUPER + ALT + D` shortcut, open the dashboard and select **ENABLE
+SHORTCUT** in its footer. Solar Forge first checks the active bindings and will
+not replace an existing shortcut. The same control removes only the clearly
+marked Solar Forge entry. Use either the shortcut or the sun icon to toggle the
+dashboard after enabling it.
 
 Theme Reactor takes keyboard focus as soon as it opens. Use Arrow keys or
 `H/J/K/L` to navigate stars, Tab/Shift+Tab to step through them, Page Up/Page
@@ -56,6 +56,50 @@ Open the GitHub planet with `G`, use Arrow keys or `H/J/K/L` to select an item,
 press Enter or Space to open it on GitHub, and press `F5` to refresh. The planet
 badge shows the total number of items needing attention. If `gh` is unavailable
 or signed out, the panel shows an actionable authentication status.
+
+## Install
+
+Solar Forge requires Omarchy with the Quattro shell and a working Quickshell
+installation. Install and enable the plugin directly from its public repository:
+
+```bash
+omarchy plugin add https://github.com/ChaseStruse/solar-forge-dashboard.git --enable
+```
+
+Restart the shell if the bar does not refresh immediately:
+
+```bash
+omarchy-shell restart
+```
+
+## Requirements and capabilities
+
+The core dashboard uses commands normally provided by Omarchy and its Arch
+Linux environment, including Bash, `jq`, `curl`, Hyprland tools, and
+`systemctl --user`. The GitHub Command Center additionally requires the GitHub
+CLI (`gh`) and a locally authenticated account. The keybinding helper uses
+`rg`. No command is run with `sudo` or `pkexec`.
+
+Solar Forge reads local system, workspace, theme, reminder, and weather state.
+Weather requests use `wttr.in`; GitHub data is requested through your local
+`gh` authentication. Tasks are stored locally through Qt's SQLite storage. The
+plugin only changes themes, backgrounds, flight-mode settings, reminders,
+workspace windows, or the optional shortcut after a corresponding user action.
+
+## Remove
+
+If you enabled the optional shortcut, remove it first from the dashboard footer
+or run:
+
+```bash
+bash "$HOME/.config/omarchy/plugins/io.github.chasestruse.solar-forge-dashboard/scripts/install-keybinding.sh" --remove
+```
+
+Then remove the plugin:
+
+```bash
+omarchy plugin remove io.github.chasestruse.solar-forge-dashboard
+```
 
 ## Code structure
 
