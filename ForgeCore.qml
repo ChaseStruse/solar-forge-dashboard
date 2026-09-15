@@ -7,6 +7,7 @@ Item {
     id: root
     required property DashboardTheme theme
     required property SystemReadinessSource readinessSource
+    required property GitHubSource githubSource
     property bool animating: false
     property bool pointerPaused: false
     onAnimatingChanged: if (!animating) pointerPaused = false
@@ -268,12 +269,36 @@ Item {
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: Math.max(18, planet.width * 0.4)
                 }
+                Rectangle {
+                    visible: planet.index === 1 && root.githubSource.actionableCount > 0
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: -4
+                    width: Math.max(18, badgeText.implicitWidth + 8)
+                    height: 18
+                    radius: 9
+                    color: root.theme.urgentColor
+                    border.color: root.theme.backgroundColor
+                    border.width: 2
+                    z: 4
+                    Text {
+                        id: badgeText
+                        anchors.centerIn: parent
+                        text: root.githubSource.actionableCount > 99 ? "99+" : String(root.githubSource.actionableCount)
+                        color: root.theme.backgroundColor
+                        font.family: Style.font.menuFamily
+                        font.pixelSize: 9
+                        font.bold: true
+                    }
+                }
                 ToolTip.visible: pointer.containsMouse
                 ToolTip.delay: 350
                 ToolTip.text: planet.index === 0
                     ? "Objectives · T to toggle · Enter to focus"
                     : planet.index === 1
-                        ? "GitHub Intel · G to toggle · Enter to focus"
+                        ? "GitHub Action Center" + (root.githubSource.actionableCount
+                            ? " · " + root.githubSource.actionableCount + " need attention" : " · inbox clear")
+                            + " · G to toggle · Enter to focus"
                         : planet.index === 2
                             ? "Mission timeline · M to toggle · Enter to focus"
                             : planet.index === 3

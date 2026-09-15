@@ -82,6 +82,7 @@ Item {
     }
     MissionControlSource {
         id: missionSource
+        githubSource: github
     }
     FlightModesSource {
         id: flightModes
@@ -212,6 +213,7 @@ Item {
                             y: 0
                             theme: dashboardTheme
                             readinessSource: readiness
+                            githubSource: github
                             selectedModule: root.activeModule
                             animating: root.opened && visible
                             visible: root.activeModule < 2
@@ -245,6 +247,7 @@ Item {
                             source: github
                             selected: root.activeModule === 1
                             visible: root.activeModule === 1
+                            onDismissRequested: root.releaseFocus()
                         }
                         MissionTimeline {
                             id: missionLog

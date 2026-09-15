@@ -30,6 +30,7 @@ ShellRoot {
     }
     MissionControlSource {
         id: missionSource
+        githubSource: github
     }
     ThemeReactorSource {
         id: themeReactor
@@ -69,6 +70,7 @@ ShellRoot {
         width: 500
         theme: theme
         readinessSource: readiness
+        githubSource: github
         onModuleSelected: function(module) { dashboard.toggleModule(module); }
         onModuleNavigated: function(module) { dashboard.selectModule(module); }
         selectedModule: dashboard.activeModule
