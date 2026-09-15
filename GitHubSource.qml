@@ -13,7 +13,7 @@ QtObject {
     property bool timedOut: false
     readonly property bool loading: process.running
     readonly property int actionableCount: actionItems.length
-    readonly property var visibleItems: actionItems.slice(0, 4)
+    readonly property var visibleItems: actionItems.slice(0, 6)
 
     function refresh() {
         if (loading)

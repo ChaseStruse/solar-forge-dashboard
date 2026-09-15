@@ -191,8 +191,9 @@ Item {
                         readonly property real branchWidth: compact
                             ? width
                             : Math.min(280, width * 0.29)
-                        height: root.activeModule >= 2
-                            ? (root.activeModule === 2 ? missionLog.implicitHeight
+                        height: root.activeModule >= 1
+                            ? (root.activeModule === 1 ? projects.implicitHeight
+                                : root.activeModule === 2 ? missionLog.implicitHeight
                                 : root.activeModule === 3 ? flightModePanel.implicitHeight
                                 : root.activeModule === 4 ? workspaceRadar.implicitHeight
                                 : themeReactorPanel.implicitHeight)
@@ -216,7 +217,7 @@ Item {
                             githubSource: github
                             selectedModule: root.activeModule
                             animating: root.opened && visible
-                            visible: root.activeModule < 2
+                            visible: root.activeModule < 1
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
@@ -238,11 +239,9 @@ Item {
                         GitHubSection {
                             id: projects
                             z: 2
-                            width: commandDeck.branchWidth
-                            x: commandDeck.width - width
-                            y: commandDeck.compact
-                                ? core.height + 28
-                                : (commandDeck.height - height) / 2
+                            width: commandDeck.width
+                            x: 0
+                            y: 0
                             theme: dashboardTheme
                             source: github
                             selected: root.activeModule === 1

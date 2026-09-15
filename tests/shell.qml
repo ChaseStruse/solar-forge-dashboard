@@ -44,6 +44,12 @@ ShellRoot {
         theme: theme
         source: themeReactor
     }
+    GitHubSection {
+        id: githubSection
+        width: 900
+        theme: theme
+        source: github
+    }
     MissionTimeline {
         id: missionTimeline
         width: 900
@@ -148,6 +154,12 @@ ShellRoot {
                 check(github.actionItems[0].kind === "REVIEW REQUEST", "review requests outrank merge-ready pull requests");
                 check(github.actionItems[1].kind === "MERGE READY", "detect merge-ready pull request");
                 check(github.status === "2 ITEMS NEED ATTENTION", "GitHub attention status");
+                check(githubSection.implicitHeight > 0, "GitHub command center lays out");
+                githubSection.selectedIndex = 0;
+                githubSection.moveSelection(1);
+                check(githubSection.selectedIndex === 1, "GitHub command center keyboard selection advances");
+                githubSection.moveSelection(1);
+                check(githubSection.selectedIndex === 0, "GitHub command center selection wraps");
                 check(!github.consume("not json"), "reject malformed GitHub response");
                 check(github.status === "GITHUB RESPONSE UNREADABLE", "invalid JSON");
                 check(!github.consume("{}"), "reject missing viewer");
