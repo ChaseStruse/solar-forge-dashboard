@@ -6,7 +6,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 - Live date and time
 - Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
-- GitHub Action Center prioritizing failed CI, requested reviews, merge-ready or blocked pull requests, mentions, and assigned issues
+- Full-width GitHub Command Center with profile telemetry, prioritized developer actions, and recent repository pulse
 - Bar-launcher icon placed in the center section immediately after weather on first enable
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
 - Colors automatically follow the active Omarchy theme
@@ -50,9 +50,9 @@ Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup
 
-Solar Forge reads action signals through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. It prioritizes failed checks on your pull requests, review requests, merge-ready or blocked pull requests, relevant unread notifications, and assigned issues. When the inbox is clear, the panel falls back to recent repository launch points.
+Solar Forge reads action signals through the locally installed GitHub CLI (`gh`). Authenticate it once with `gh auth login`; the dashboard never stores a GitHub token. It prioritizes failed checks on your pull requests, review requests, merge-ready or blocked pull requests, relevant unread notifications, and assigned issues. The full-width Command Center also shows followers, stars earned across owned repositories, owned repository count, following, yearly contributions, open pull requests, and recently active repositories.
 
-Open the GitHub planet with `G`, use Arrow keys or `J/K` to select an item,
+Open the GitHub planet with `G`, use Arrow keys or `H/J/K/L` to select an item,
 press Enter or Space to open it on GitHub, and press `F5` to refresh. The planet
 badge shows the total number of items needing attention. If `gh` is unavailable
 or signed out, the panel shows an actionable authentication status.

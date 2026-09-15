@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.chasestruse.solar-forge-dashboard",
   "name": "Solar Forge Dashboard",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": "Chase Struse",
   "license": "MIT",
   "description": "A cyberpunk personal dashboard for Omarchy, launched from the bar.",
