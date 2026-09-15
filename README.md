@@ -5,7 +5,7 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 ## Current features
 
 - Live date and time
-- Local persistent to-do list: add tasks with `Enter`, click to complete; three visible rows with scrolling
+- Full-width Objectives Command Center with active, closed, reminder, and total telemetry; add tasks with `Enter` and click to complete
 - Full-width GitHub Command Center with profile telemetry, prioritized developer actions, and recent repository pulse
 - Bar-launcher icon placed in the center section immediately after weather on first enable
 - Normal desktop window that Hyprland can tile and close with the compositor shortcut or title-bar control
@@ -62,8 +62,8 @@ or signed out, the panel shows an actionable authentication status.
 - `BarWidget.qml`: launcher and the lifecycle methods Omarchy calls.
 - `Dashboard.qml`: window, page layout, and section composition.
 - `DashboardTheme.qml`: live Omarchy theme bindings shared by all sections.
-- `TodoStore.qml`: SQLite access, task model, active count, and storage errors.
-- `TodoSection.qml`: task input and the virtualized three-row list.
+- `TodoStore.qml`: SQLite access, task model, active/closed/total telemetry, and storage errors.
+- `TodoSection.qml`: full-width objective queue, telemetry, reminder controls, and inbound transmissions.
 - `GitHubSource.qml`: shared action prioritization, timeout, response validation, and status.
 - `GitHubSection.qml`: keyboard-accessible action inbox and repository fallback.
 - `scripts/github-intelligence.sh`: bounded GitHub GraphQL and notification collection.
@@ -104,7 +104,7 @@ git diff --check
 ```
 
 The offscreen regression harness tests task persistence/counts/sorting, blank
-input, a 50-task three-row viewport, GitHub action prioritization and malformed responses, and repeatable
+input, a 50-task six-row viewport, objective telemetry, GitHub action prioritization and malformed responses, and repeatable
 close/reopen state, module selection, and animation pause/resume. It uses a fresh database under /tmp and makes no GitHub
 requests. Temporary test output is retained at the path printed by the runner.
 
