@@ -84,7 +84,7 @@ QtObject {
     }
 
     function setReminder(taskId, unit, due) {
-        if (!/^omarchy-reminder-[0-9]+m-[0-9]+$/.test(String(unit || "")) || Number(due) <= 0)
+        if (!/^omarchy-reminder-[0-9]+m-[0-9]+$/.test(String(unit || "")) || !isFinite(Number(due)) || Number(due) <= 0)
             return false;
         return write("UPDATE todos SET reminder_unit = ?, reminder_due = ? WHERE id = ? AND done = 0", [String(unit), Math.floor(Number(due)), taskId]);
     }

@@ -37,8 +37,12 @@ fi
 
 themes_json=$(
   {
-    find "$user_themes" -mindepth 1 -maxdepth 1 \( -type d -o -type l \) -printf '%f\n' 2>/dev/null
-    find "$system_themes" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null
+    if [[ -d "$user_themes" ]]; then
+      find "$user_themes" -mindepth 1 -maxdepth 1 \( -type d -o -type l \) -printf '%f\n'
+    fi
+    if [[ -d "$system_themes" ]]; then
+      find "$system_themes" -mindepth 1 -maxdepth 1 -type d -printf '%f\n'
+    fi
   } | sort -u | while IFS= read -r slug; do
     user_colors="$user_themes/$slug/colors.toml"
     system_colors="$system_themes/$slug/colors.toml"
@@ -47,9 +51,12 @@ themes_json=$(
     background=$(theme_color "$user_colors" "$system_colors" background "#10141f")
     name=$(slug_to_name "$slug")
     background_count=$(
-      find -L "$user_themes/../backgrounds/$slug" "$user_themes/$slug/backgrounds" "$system_themes/$slug/backgrounds" \
-        -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \) \
-        -printf '.' 2>/dev/null | wc -c
+      for directory in "$user_themes/../backgrounds/$slug" "$user_themes/$slug/backgrounds" "$system_themes/$slug/backgrounds"; do
+        if [[ -d "$directory" ]]; then
+          find -L "$directory" -maxdepth 1 -type f \
+            \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.bmp' -o -iname '*.webp' \) -printf '.'
+        fi
+      done | wc -c
     )
     jq -cn --arg id "$slug" --arg name "$name" --arg accent "$accent" --arg secondary "$secondary" \
       --arg background "$background" --argjson backgrounds "$background_count" --arg current "$current_slug" \

@@ -288,6 +288,7 @@ FocusScope {
                     Text {
                         width: parent.width
                         text: root.selectedWindow ? root.selectedWindow.app.toUpperCase() : ""
+                        textFormat: Text.PlainText
                         color: root.theme.foregroundColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 12; font.bold: true
@@ -296,6 +297,7 @@ FocusScope {
                     Text {
                         width: parent.width
                         text: root.selectedWindow ? root.selectedWindow.title : ""
+                        textFormat: Text.PlainText
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 10

@@ -31,4 +31,11 @@ done
 SOLAR_FORGE_BINDINGS_FILE="$occupied_file" SOLAR_FORGE_ACTIVE_BINDINGS_JSON='[{"modmask":72,"keycode":40}]' bash "$installer" >/dev/null
 ! rg -q 'Solar Forge Dashboard' "$occupied_file"
 
+linked_file="$test_dir/linked.lua"
+ln -s "$free_file" "$linked_file"
+SOLAR_FORGE_BINDINGS_FILE="$linked_file" SOLAR_FORGE_ACTIVE_BINDINGS_JSON='[]' bash "$installer" >/dev/null
+SOLAR_FORGE_BINDINGS_FILE="$linked_file" bash "$installer" --remove >/dev/null
+[[ -L "$linked_file" ]]
+! rg -q 'Solar Forge Dashboard' "$free_file"
+
 echo "Keybinding installer checks passed. Test files: $test_dir"

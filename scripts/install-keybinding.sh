@@ -2,6 +2,10 @@
 set -euo pipefail
 
 binding_file="${SOLAR_FORGE_BINDINGS_FILE:-$HOME/.config/hypr/bindings.lua}"
+# Edit the target of a dotfiles symlink so removal does not replace the link.
+if [[ -L "$binding_file" ]]; then
+  binding_file=$(readlink -f -- "$binding_file")
+fi
 binding_json="${SOLAR_FORGE_ACTIVE_BINDINGS_JSON:-}"
 marker="-- Solar Forge Dashboard (managed by plugin)"
 binding='o.bind("SUPER + ALT + D", "Solar Forge Dashboard", "omarchy-shell shell toggle io.github.chasestruse.solar-forge-dashboard")'

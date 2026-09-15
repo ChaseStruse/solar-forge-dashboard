@@ -22,4 +22,12 @@ jq -e '.themes | length == 2' <<<"$payload" >/dev/null
 jq -e '.themes[] | select(.id == "nebula") | .accent == "#123456" and .secondary == "#654321" and .backgroundCount == 1 and .current' <<<"$payload" >/dev/null
 jq -e '.themes[] | select(.id == "nord") | .accent == "#88c0d0" and (.current | not)' <<<"$payload" >/dev/null
 
+payload=$(SOLAR_FORGE_USER_THEMES="$test_dir/missing" SOLAR_FORGE_SYSTEM_THEMES="$system_themes" \
+  SOLAR_FORGE_CURRENT_STATE="$current" "$project_dir/scripts/theme-reactor-state.sh")
+jq -e '.themes | length == 1' <<<"$payload" >/dev/null
+
+payload=$(SOLAR_FORGE_USER_THEMES="$test_dir/missing" SOLAR_FORGE_SYSTEM_THEMES="$test_dir/also-missing" \
+  SOLAR_FORGE_CURRENT_STATE="$current" "$project_dir/scripts/theme-reactor-state.sh")
+jq -e '.themes == []' <<<"$payload" >/dev/null
+
 echo "Theme reactor state checks passed. Test files: $test_dir"
