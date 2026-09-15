@@ -96,9 +96,12 @@ ShellRoot {
                 for (var i = 0; i < 50; i++)
                     check(store.add("Task " + i), "add task");
                 check(store.remaining === 50, "remaining count");
+                check(store.totalCount === 50 && store.activeCount === 50, "task total and active telemetry");
+                check(store.closedCount === 0, "initial closed telemetry");
                 var id = store.model.get(0).taskId;
                 check(store.setDone(id, true), "complete task");
                 check(store.remaining === 49, "updated count");
+                check(store.closedCount === 1, "closed telemetry follows completion");
                 check(store.load() && store.model.count === 50, "persisted tasks");
                 check(store.model.get(49).taskId === id, "completed tasks sort last");
                 check(reminders.linkedTaskId("☀ Objective #42 · Write tests") === 42, "parse linked reminder task");

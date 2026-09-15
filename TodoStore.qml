@@ -8,6 +8,9 @@ QtObject {
     property string error: ""
     property int remaining: 0
     readonly property ListModel model: ListModel {}
+    readonly property int totalCount: model.count
+    readonly property int activeCount: remaining
+    readonly property int closedCount: Math.max(0, totalCount - activeCount)
 
     function database() {
         return LocalStorage.openDatabaseSync(databaseName, "1.0", "Solar Forge tasks", 1000000);
