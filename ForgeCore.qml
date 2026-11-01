@@ -35,13 +35,13 @@ Item {
     focus: true
 
     readonly property var modules: [
-        { name: "OBJECTIVES", key: "T", glyph: "" },
-        { name: "GITHUB INTEL", key: "G", glyph: "" },
-        { name: "LAUNCH CONTROL", key: "L", glyph: "󱓞" },
-        { name: "REACTOR", key: "R", glyph: "󰈸" },
-        { name: "COMMS ARRAY", key: "C", glyph: "󰖩" },
-        { name: "SUPPLY DEPOT", key: "D", glyph: "󰏗" },
-        { name: "KEYBIND CODEX", key: "K", glyph: "󰌌" }
+        { name: "OBJECTIVES", key: "T", glyph: "", kind: "ringed" },
+        { name: "GITHUB INTEL", key: "G", glyph: "", kind: "gas" },
+        { name: "LAUNCH CONTROL", key: "L", glyph: "󱓞", kind: "holo" },
+        { name: "REACTOR", key: "R", glyph: "󰈸", kind: "lava" },
+        { name: "COMMS ARRAY", key: "C", glyph: "󰖩", kind: "ice" },
+        { name: "SUPPLY DEPOT", key: "D", glyph: "󰏗", kind: "crater" },
+        { name: "KEYBIND CODEX", key: "K", glyph: "󰌌", kind: "dots" }
     ]
     // Per-planet telemetry supplied by the dashboard:
     // { badge: string, alert: bool, progress: 0..1 or -1, detail: string }
@@ -411,34 +411,22 @@ Item {
                         PauseAnimation { duration: 500 }
                     }
                 }
-                // Progress halo: an arc that fills with the module's completion.
-                Canvas {
+                Planet {
                     anchors.fill: parent
-                    anchors.margins: -4
-                    visible: planet.status.progress >= 0
-                    property real progress: Math.max(0, Math.min(1, planet.status.progress))
-                    Behavior on progress { NumberAnimation { duration: 900; easing.type: Easing.OutCubic } }
-                    property color ink: root.theme.accentColor
-                    onProgressChanged: requestPaint()
-                    onInkChanged: requestPaint()
-                    onWidthChanged: requestPaint()
-                    onPaint: {
-                        var c = getContext("2d"); c.reset();
-                        var m = width / 2;
-                        c.lineWidth = 2;
-                        c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.18);
-                        c.beginPath(); c.arc(m, m, m - 1.5, 0, Math.PI * 2); c.stroke();
-                        if (progress > 0) {
-                            c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.95);
-                            c.lineWidth = 3;
-                            c.beginPath(); c.arc(m, m, m - 1.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress); c.stroke();
-                        }
-                    }
+                    theme: root.theme
+                    kind: root.modules[planet.index].kind
+                    // Direction from this planet toward the sun, for lighting.
+                    lightAngle: Math.atan2(chamber.height / 2 - planet.y - planet.height / 2,
+                                           chamber.width / 2 - planet.x - planet.width / 2)
+                    progress: planet.status.progress
+                    heat: root.heat
+                    alert: planet.status.alert
+                    animating: root.animating
                 }
                 // Targeting reticle: spinning dashed ring with corner ticks.
                 Item {
                     anchors.fill: parent
-                    anchors.margins: -7
+                    anchors.margins: -9
                     opacity: planet.selected ? 1 : pointer.containsMouse ? 0.55 : 0
                     Behavior on opacity { NumberAnimation { duration: 220 } }
                     Canvas {
@@ -458,39 +446,17 @@ Item {
                         }
                     }
                 }
-                Canvas {
-                    anchors.fill: parent
-                    // Rotate the lighting toward the sun; keep the label upright.
-                    rotation: Math.atan2(chamber.height/2 - planet.y - planet.height/2,
-                                         chamber.width/2 - planet.x - planet.width/2) * 180 / Math.PI
-                    property color ink: root.theme.secondaryAccentColor
-                    property color shade: root.theme.backgroundColor
-                    onInkChanged: requestPaint()
-                    onShadeChanged: requestPaint()
-                    onWidthChanged: requestPaint()
-                    onHeightChanged: requestPaint()
-                    onPaint: {
-                        var c = getContext("2d"); c.reset();
-                        var m = width / 2, r = m - 1;
-                        var g = c.createRadialGradient(m+r*0.65, m-r*0.15, 0, m, m, r);
-                        g.addColorStop(0, Qt.lighter(ink, 2.3));
-                        g.addColorStop(0.45, ink);
-                        g.addColorStop(1, Qt.darker(shade, 1.4));
-                        c.beginPath(); c.arc(m, m, r, 0, Math.PI*2);
-                        c.fillStyle = g; c.fill();
-                        c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.8);
-                        c.lineWidth = 1;
-                        c.stroke();
-                    }
-                }
                 Text {
                     anchors.centerIn: parent
                     // Glyphs come from Omarchy's bundled Nerd Font,
                     // independent of the user's text face.
                     text: root.modules[planet.index].glyph
                     color: root.theme.foregroundColor
+                    opacity: planet.selected || pointer.containsMouse ? 1 : 0.8
+                    style: Text.Outline
+                    styleColor: Qt.rgba(root.theme.backgroundColor.r, root.theme.backgroundColor.g, root.theme.backgroundColor.b, 0.7)
                     font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: Math.max(15, planet.width * 0.4)
+                    font.pixelSize: Math.max(12, planet.width * 0.3)
                 }
                 Rectangle {
                     visible: String(planet.status.badge).length > 0

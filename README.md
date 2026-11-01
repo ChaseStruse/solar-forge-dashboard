@@ -6,10 +6,10 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 
 A fullscreen, terminal-style command deck built around a living solar forge:
 
-- **Forge core:** the sun shifts from accent toward urgent, breathes faster, and spins hotter as CPU/GPU load and warnings rise, firing flare shockwaves for each active warning. Seven module planets orbit it and show their state: progress halos, badges, and red distress pulses.
+- **Forge core:** the sun shifts from accent toward urgent, breathes faster, and spins hotter as CPU/GPU load and warnings rise, firing flare shockwaves for each active warning. Seven module planets orbit it as distinct, sun-lit, rotating worlds that show their module's state: a ringed giant whose ring fills as objectives close (Objectives), a banded gas giant whose storm turns red on failed checks (GitHub), a wireframe globe with an orbiting satellite (Launch), a molten world that glows with system heat (Reactor), an ice world emitting signal waves scaled by Wi-Fi strength (Comms), a cratered moon with night-side outpost lights (Depot), and a point-cloud data globe (Codex).
 - **Fullscreen deck:** opens as a Hyprland fullscreen window with a telemetry rail (sparklines, storage and power bars, host readouts), a live syslog stream, weather and a seconds clock in the top bar, and a command line along the bottom.
 - **Animation:** a terminal ignition sequence on first open, planets flying out to orbit, CRT power-on for modules, glitch slices on theme changes, a launch beam when an app starts, and a CRT power-off on exit. Optional sound effects use the freedesktop sound theme.
-- Colors follow the active Omarchy theme. The optional `SUPER + ALT + D` keybinding is enabled from inside the dashboard.
+- Colors follow the active Omarchy theme. Optional keybindings, enabled from inside the dashboard: `SUPER + ALT + D` toggles the deck, and `SUPER + ALT + L` opens it straight into Launch Control (pressing it again closes it).
 
 ### Modules
 
@@ -55,7 +55,7 @@ focuses it.
 | `wifi <on\|off>`, `bt <on\|off\|toggle>`, `volume <+N\|-N\|mute-toggle>` | Radio and audio control |
 | `status`, `refresh`, `boot` | Print telemetry, resync every source, replay ignition |
 | `sfx <on\|off>` | Toggle sound effects (remembered between sessions) |
-| `shortcut` | Toggle the `SUPER + ALT + D` keybinding |
+| `shortcut [dashboard\|launcher]` | Toggle the `SUPER + ALT + D` or `SUPER + ALT + L` keybinding |
 | `clear`, `exit` | Wipe the syslog, power the deck down |
 
 Tab completes commands and their arguments (including app and theme names);
@@ -67,10 +67,13 @@ Enable the plugin and use the sun icon in the center section of the Omarchy bar,
 immediately to the right of the weather widget in the standard layout.
 
 The bar icon works without changing your Hyprland configuration. To add the
-optional `SUPER + ALT + D` shortcut, open the dashboard and run the `shortcut`
-command. Solar Forge first checks the active bindings and will
-not replace an existing shortcut. The same command removes only the clearly
-marked Solar Forge entry.
+optional `SUPER + ALT + D` shortcut, open the dashboard and run `shortcut`; for
+the `SUPER + ALT + L` launcher shortcut, run `shortcut launcher`. Solar Forge
+first checks the active bindings and will not replace an existing shortcut. The
+same command removes only the clearly marked Solar Forge entry. The launcher
+shortcut calls the plugin's `solar-forge` IPC target
+(`omarchy-shell solar-forge launcher`) and summons the deck on the focused
+monitor.
 
 ## GitHub setup
 
@@ -114,11 +117,12 @@ workspace windows, or the optional shortcut after a corresponding user action.
 
 ## Remove
 
-If you enabled the optional shortcut, remove it first with the dashboard's `shortcut`
-command or run:
+If you enabled the optional shortcuts, remove them first with the dashboard's
+`shortcut` / `shortcut launcher` commands or run:
 
 ```bash
-bash "$HOME/.config/omarchy/plugins/io.github.chasestruse.solar-forge-dashboard/scripts/install-keybinding.sh" --remove
+bash "$HOME/.config/omarchy/plugins/io.github.chasestruse.solar-forge-dashboard/scripts/install-keybinding.sh" --remove dashboard
+bash "$HOME/.config/omarchy/plugins/io.github.chasestruse.solar-forge-dashboard/scripts/install-keybinding.sh" --remove launcher
 ```
 
 Then remove the plugin:
@@ -132,7 +136,8 @@ omarchy plugin remove io.github.chasestruse.solar-forge-dashboard
 - `BarWidget.qml`: launcher and the lifecycle methods Omarchy calls.
 - `Dashboard.qml`: fullscreen window, layout, module composition, planet telemetry, and the command interpreter.
 - `DashboardTheme.qml`: live Omarchy theme bindings plus type, spacing, and HUD tokens.
-- `ForgeCore.qml`: orbital rendering, heat-reactive sun, planet state rings, ignition, and module navigation.
+- `ForgeCore.qml`: orbital rendering, heat-reactive sun, planet state, ignition, and module navigation.
+- `Planet.qml`: the seven world types: projected, rotating surfaces with terminator shading, rim light, and per-module state.
 - `ReadinessRing.qml`: value-proportional resource arcs and readouts around the sun.
 - HUD kit: `HudFrame.qml`, `PanelHeader.qml`, `StatTile.qml`, `HudButton.qml`, `HudRow.qml`, `DecodeText.qml`.
 - Deck chrome: `TelemetryRail.qml`, `SystemLog.qml`, `CommandLine.qml` (with completion), `BootSequence.qml`, `Starfield.qml`, `AmbientLayer.qml`.
