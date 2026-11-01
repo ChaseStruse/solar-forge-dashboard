@@ -47,7 +47,7 @@ Column {
                 easing.type: Easing.OutCubic
             }
             Text { id: timeText; width: 40; text: modelData.time; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; topPadding: 3 }
-            Rectangle { x: 45; y: 4; width: 9; height: 9; radius: 5; color: root.future ? root.theme.backgroundColor : root.toneColor(modelData.tone); border.color: root.toneColor(modelData.tone); border.width: 2 }
+            Rectangle { x: 45; y: 4; width: 9; height: 9; radius: 2; color: root.future ? root.theme.backgroundColor : root.toneColor(modelData.tone); border.color: root.toneColor(modelData.tone); border.width: 2 }
             Rectangle { x: 49; y: 15; width: 1; height: Math.max(0, parent.height - 15); color: root.theme.borderColor }
             Column {
                 id: eventCopy

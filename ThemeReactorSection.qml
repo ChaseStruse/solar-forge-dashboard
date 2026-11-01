@@ -10,7 +10,7 @@ Item {
     property bool selected: false
     property int selectedIndex: 0
     signal dismissRequested()
-    implicitHeight: content.implicitHeight + 48
+    implicitHeight: content.implicitHeight + 8
     focus: true
 
     onSelectedChanged: if (selected)
@@ -91,19 +91,12 @@ Item {
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 12
-        color: Util.alpha(root.theme.backgroundColor, 0.96)
-        border.color: root.theme.borderColor
-    }
-
     Column {
         id: content
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 24
+        anchors.margins: 4
         spacing: 18
 
         RowLayout {
@@ -135,7 +128,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 220
-                radius: 8
+                radius: 2
                 clip: true
                 color: root.theme.surfaceColor
                 border.color: root.theme.accentColor
@@ -160,7 +153,7 @@ Item {
                 Column {
                     anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
                     anchors.margins: 12; spacing: 3
-                    Text { text: "HOLOGRAPHIC BACKGROUND FEED"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                    Text { text: "HOLOGRAPHIC BACKGROUND FEED"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true; font.letterSpacing: 1 }
                     Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: root.source.wallpaperName; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 13; font.bold: true }
                 }
             }
@@ -172,14 +165,14 @@ Item {
                 Text { text: "REACTOR CONTROLS"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1.2 }
                 Text { width: parent.width; wrapMode: Text.Wrap; text: "Selecting a star applies its full Omarchy palette. The Solar Forge interface will transform with the live system theme."; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
                 Rectangle {
-                    width: parent.width; height: 42; radius: 6
+                    width: parent.width; height: 42; radius: 2
                     color: backgroundHover.containsMouse ? Util.alpha(root.theme.accentColor, 0.14) : root.theme.surfaceColor
                     border.color: root.theme.borderColor
                     Text { anchors.centerIn: parent; text: "CYCLE BACKGROUND  //  B"; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1 }
                     MouseArea { id: backgroundHover; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.source.nextBackground() }
                 }
                 Rectangle {
-                    width: parent.width; height: 38; radius: 6
+                    width: parent.width; height: 38; radius: 2
                     color: scanHover.containsMouse ? root.theme.surfaceColor : "transparent"
                     border.color: root.theme.borderColor
                     Text { anchors.centerIn: parent; text: "RESCAN INSTALLED THEMES"; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true }
@@ -214,7 +207,7 @@ Item {
                 width: themeGrid.cellWidth
                 height: themeGrid.cellHeight
                 Rectangle {
-                    anchors.fill: parent; anchors.margins: 4; radius: 7
+                    anchors.fill: parent; anchors.margins: 4; radius: 2
                     color: modelData.current ? Util.alpha(modelData.accent, 0.16) : root.theme.surfaceColor
                     border.color: root.selectedIndex === index || modelData.current ? modelData.accent : root.theme.borderColor
                     Row {
@@ -235,7 +228,7 @@ Item {
                         Column {
                             width: parent.width - 39; anchors.verticalCenter: parent.verticalCenter; spacing: 3
                             Text { width: parent.width; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.name; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true }
-                            Text { text: modelData.current ? "ACTIVE" : modelData.backgroundCount + " BACKGROUNDS"; color: modelData.current ? modelData.accent : root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 9; font.bold: true }
+                            Text { text: modelData.current ? "ACTIVE" : modelData.backgroundCount + " BACKGROUNDS"; color: modelData.current ? modelData.accent : root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true }
                         }
                     }
                     MouseArea {

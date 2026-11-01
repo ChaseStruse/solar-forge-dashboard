@@ -9,7 +9,7 @@ FocusScope {
     property bool selected: false
     property var selectedWindow: null
     signal dismissRequested()
-    implicitHeight: 670
+    implicitHeight: 630
 
     function appGlyph(app) {
         var name = String(app || "").toLowerCase();
@@ -25,16 +25,9 @@ FocusScope {
 
     Keys.onEscapePressed: root.dismissRequested()
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 16
-        color: root.theme.surfaceColor
-        border.color: root.theme.borderColor
-    }
-
     Column {
         anchors.fill: parent
-        anchors.margins: 22
+        anchors.margins: 4
         spacing: 10
 
         Row {
@@ -73,7 +66,8 @@ FocusScope {
                     c.strokeStyle = ink; c.lineWidth = 1;
                     for (var r of [0.23, 0.36, 0.49]) {
                         c.beginPath();
-                        c.ellipse(width/2, height/2, width*r, height*r*0.58, 0, 0, Math.PI*2);
+                        // Qt's ellipse() takes a bounding box, not centre + radii.
+                        c.ellipse(width/2 - width*r, height/2 - height*r*0.58, width*r*2, height*r*0.58*2);
                         c.globalAlpha = 0.13; c.stroke();
                     }
                     c.beginPath(); c.moveTo(width/2-18, height/2); c.lineTo(width/2+18, height/2);
@@ -229,7 +223,7 @@ FocusScope {
                             text: planet.modelData.role
                             color: root.theme.dimmedTextColor
                             font.family: Style.font.menuFamily
-                            font.pixelSize: 9
+                            font.pixelSize: 11
                             font.letterSpacing: 1
                         }
                         Text {
@@ -237,7 +231,7 @@ FocusScope {
                             text: (planet.modelData.fullscreen ? "FULL  ·  " : "") + planet.modelData.windows.length + (planet.modelData.windows.length === 1 ? " SIGNAL" : " SIGNALS")
                             color: planet.modelData.windows.length >= 5 ? root.theme.urgentColor : root.theme.faintTextColor
                             font.family: Style.font.menuFamily
-                            font.pixelSize: 8
+                            font.pixelSize: 11
                         }
                     }
                 }
@@ -267,7 +261,7 @@ FocusScope {
                 text: "SELECT A MOON FOR OPERATIONS  ·  DOUBLE-CLICK TO FOCUS  ·  DRAG TO REASSIGN"
                 color: root.theme.faintTextColor
                 font.family: Style.font.menuFamily
-                font.pixelSize: 10
+                font.pixelSize: 11
                 font.letterSpacing: 1
             }
             Row {
@@ -300,7 +294,7 @@ FocusScope {
                         textFormat: Text.PlainText
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                         elide: Text.ElideRight
                     }
                 }
@@ -316,7 +310,7 @@ FocusScope {
                         ]
                         Rectangle {
                             required property var modelData
-                            width: actionText.implicitWidth + 18; height: 30; radius: 6
+                            width: actionText.implicitWidth + 18; height: 30; radius: 2
                             color: actionMouse.containsMouse ? root.theme.surfaceColor : "transparent"
                             border.color: modelData.destructive ? root.theme.urgentColor : root.theme.borderColor
                             opacity: root.source.actionRunning ? 0.45 : 1
@@ -326,7 +320,7 @@ FocusScope {
                                 text: modelData.label
                                 color: modelData.destructive ? root.theme.urgentColor : root.theme.foregroundColor
                                 font.family: Style.font.menuFamily
-                                font.pixelSize: 9; font.bold: true
+                                font.pixelSize: 11; font.bold: true
                             }
                             MouseArea {
                                 id: actionMouse
