@@ -19,6 +19,19 @@ Item {
     // First Escape at the idle core arms shutdown; a second one disengages.
     property bool escArmed: false
     readonly property int moduleCount: core.modules.length
+    // Set by the launcher shortcut just before the shell summons the deck.
+    property double launcherArmedAt: 0
+    property bool launcherShortcutConfigured: false
+
+    function armLauncher() {
+        launcherArmedAt = Date.now();
+    }
+    function toggleLauncher() {
+        if (activeModule === 2)
+            shutdown();
+        else
+            openModule(2);
+    }
 
     function open() {
         todos.load();
@@ -43,6 +56,15 @@ Item {
         fullscreenDelay.restart();
         if (!hostProcess.running && !hostLine)
             hostProcess.running = true;
+        // A launcher summon skips the cinematic: get to the search field fast.
+        var intoLauncher = Date.now() - launcherArmedAt < 3000;
+        launcherArmedAt = 0;
+        if (intoLauncher) {
+            core.ignite();
+            Qt.callLater(function() { if (root.opened) root.openModule(2); });
+            syslog.log("SYS", "launch control summoned", "ok");
+            return;
+        }
         if (!briefingShown) {
             briefingShown = true;
             systemSource.refresh();
@@ -106,11 +128,13 @@ Item {
             Quickshell.execDetached(["canberra-gtk-play", "-i", name]);
     }
 
-    function toggleShortcut() {
+    function toggleShortcut(which) {
         if (shortcutManager.running)
             return;
-        shortcutStatus = shortcutConfigured ? "REMOVING SHORTCUT…" : "INSTALLING SHORTCUT…";
-        shortcutManager.command = ["bash", shortcutScript, shortcutConfigured ? "--remove" : "--install"];
+        var launcherKey = which === "launcher";
+        var configured = launcherKey ? launcherShortcutConfigured : shortcutConfigured;
+        shortcutStatus = (configured ? "REMOVING " : "INSTALLING ") + (launcherKey ? "SUPER + ALT + L" : "SUPER + ALT + D") + "…";
+        shortcutManager.command = ["bash", shortcutScript, configured ? "--remove" : "--install", launcherKey ? "launcher" : "dashboard"];
         shortcutManager.running = true;
     }
 
@@ -284,12 +308,15 @@ Item {
 
     Process {
         id: shortcutStatusProcess
-        command: ["bash", root.shortcutScript, "--status"]
+        command: ["bash", "-c", 'bash "$0" --status dashboard; bash "$0" --status launcher', root.shortcutScript]
         stdout: StdioCollector { id: shortcutStatusOutput; waitForEnd: true }
         onExited: function(code) {
-            root.shortcutConfigured = code === 0 && String(shortcutStatusOutput.text || "").trim() === "configured";
-            root.shortcutStatus = root.shortcutConfigured ? "SUPER + ALT + D ENABLED" : "OPTIONAL SHORTCUT DISABLED";
-            syslog.log("KEYS", root.shortcutStatus.toLowerCase(), "echo");
+            var lines = String(shortcutStatusOutput.text || "").trim().split("\n");
+            root.shortcutConfigured = code === 0 && lines[0] === "configured";
+            root.launcherShortcutConfigured = code === 0 && lines[1] === "configured";
+            root.shortcutStatus = "SUPER + ALT + D " + (root.shortcutConfigured ? "ON" : "OFF")
+                + "  ·  SUPER + ALT + L " + (root.launcherShortcutConfigured ? "ON" : "OFF");
+            syslog.log("KEYS", root.shortcutStatus.toLowerCase() + "  ·  type shortcut [launcher] to toggle", "echo");
         }
     }
     Process {
@@ -298,6 +325,7 @@ Item {
         onExited: function(code) {
             var result = String(shortcutManagerOutput.text || "").trim();
             root.shortcutStatus = code === 0 ? result.toUpperCase() : "SHORTCUT CHANGE FAILED";
+            syslog.log("KEYS", code === 0 ? result : "shortcut change failed", code === 0 ? "ok" : "warn");
             shortcutRefreshDelay.restart();
         }
     }
@@ -367,7 +395,7 @@ Item {
         { name: "refresh", args: "", hint: "resync every source" },
         { name: "boot", args: "", hint: "replay ignition" },
         { name: "sfx", args: "<on|off>", hint: "sound effects" },
-        { name: "shortcut", args: "", hint: "toggle SUPER + ALT + D" },
+        { name: "shortcut", args: "[dashboard|launcher]", hint: "toggle SUPER + ALT + D / L" },
         { name: "clear", args: "", hint: "wipe the syslog" },
         { name: "exit", args: "", hint: "close the forge" }
     ]
@@ -403,6 +431,8 @@ Item {
             options = ["on", "off", "toggle"];
         else if (verb === "volume")
             options = ["+5", "-5", "mute-toggle"];
+        else if (verb === "shortcut")
+            options = ["dashboard", "launcher"];
         else if (verb === "wallpaper")
             options = ["next"];
         else if (verb === "focus")
@@ -514,8 +544,10 @@ Item {
             sfx("bell");
             syslog.log("SYS", "sound effects " + arg, "ok");
         } else if (verb === "shortcut") {
-            toggleShortcut();
-            syslog.log("SYS", root.shortcutStatus, "info");
+            if (arg && arg !== "launcher" && arg !== "dashboard")
+                return syslog.log("ERR", "usage: shortcut [dashboard|launcher]", "warn");
+            toggleShortcut(arg);
+            syslog.log("SYS", root.shortcutStatus.toLowerCase(), "info");
         } else if (verb === "clear" || verb === "cls") {
             syslog.clear();
         } else if (verb === "exit" || verb === "quit") {
