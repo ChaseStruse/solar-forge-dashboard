@@ -16,10 +16,10 @@ Item {
     property double currentTime: Date.now()
     signal dismissRequested()
     signal replayBriefing()
-    implicitHeight: content.implicitHeight + 48
+    implicitHeight: content.implicitHeight + 8
 
-    readonly property color autonomousColor: "#62d6b3"
-    readonly property color weatherColor: "#70b9df"
+    readonly property color autonomousColor: theme.secondaryAccentColor
+    readonly property color weatherColor: theme.mix(theme.accentColor, theme.foregroundColor, 0.35)
 
     function outstandingTasks(limit) {
         var result = []
@@ -79,20 +79,14 @@ Item {
         return theme.accentColor;
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 12
-        color: Util.alpha(root.theme.backgroundColor, 0.96)
-        border.color: root.theme.borderColor
-    }
-    Rectangle { anchors.fill: parent; radius: 12; color: root.autonomousColor; opacity: root.eventGlow }
+    Rectangle { anchors.fill: parent; color: root.autonomousColor; opacity: root.eventGlow }
 
     Column {
         id: content
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 24
+        anchors.margins: 4
         spacing: 20
 
         GridLayout {
@@ -137,7 +131,7 @@ Item {
                     anchors.centerIn: parent
                     spacing: 8
                     Rectangle {
-                        width: 7; height: 7; radius: 4; color: root.autonomousColor
+                        width: 7; height: 7; radius: 2; color: root.autonomousColor
                         SequentialAnimation on opacity {
                             loops: Animation.Infinite
                             running: root.source.loading
@@ -193,7 +187,7 @@ Item {
                     required property var modelData
                     Layout.fillWidth: true
                     Layout.preferredHeight: 126
-                    radius: 7
+                    radius: 2
                     color: root.theme.surfaceColor
                     border.color: root.theme.borderColor
                     Column {
@@ -243,7 +237,7 @@ Item {
         Rectangle {
             width: parent.width
             height: Math.max(76, statusText.implicitHeight + 48)
-            radius: 7
+            radius: 2
             color: Util.alpha(root.theme.urgentColor, 0.07)
             border.color: Util.alpha(root.theme.urgentColor, 0.35)
             RowLayout {
@@ -300,7 +294,7 @@ Item {
                 Layout.preferredWidth: 1
                 Layout.alignment: Qt.AlignTop
                 implicitHeight: taskLane.implicitHeight + 28
-                radius: 7
+                radius: 2
                 color: root.theme.surfaceColor
                 border.color: root.theme.borderColor
                 Column {
@@ -320,7 +314,7 @@ Item {
                             spacing: 8
                             Text { text: "□"; color: root.theme.urgentColor; font.family: Style.font.menuFamily; font.pixelSize: 13 }
                             Text { Layout.fillWidth: true; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.title; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
-                            Text { visible: modelData.reminderDue > 0; text: "REMINDER SET"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true }
+                            Text { visible: modelData.reminderDue > 0; text: "REMINDER SET"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true }
                         }
                     }
                     Text { visible: root.taskStore.remaining > 5; text: "+ " + (root.taskStore.remaining - 5) + " more objectives"; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11 }
@@ -332,7 +326,7 @@ Item {
                 Layout.preferredWidth: 1
                 Layout.alignment: Qt.AlignTop
                 implicitHeight: reminderLane.implicitHeight + 28
-                radius: 7
+                radius: 2
                 color: root.theme.surfaceColor
                 border.color: root.theme.borderColor
                 Column {
@@ -352,7 +346,7 @@ Item {
                             spacing: 8
                             Text { text: "◉"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 11 }
                             Text { Layout.fillWidth: true; elide: Text.ElideRight; textFormat: Text.PlainText; text: modelData.label; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
-                            Text { text: "T−" + root.countdown(modelData.at) + " · " + modelData.atTime; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10 }
+                            Text { text: "T−" + root.countdown(modelData.at) + " · " + modelData.atTime; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11 }
                         }
                     }
                     Text { visible: root.reminderSource.reminders.length > 5; text: "+ " + (root.reminderSource.reminders.length - 5) + " more reminders"; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11 }
@@ -363,7 +357,7 @@ Item {
         Rectangle {
             width: parent.width
             height: 48
-            radius: 7
+            radius: 2
             color: Util.alpha(root.autonomousColor, 0.07)
             RowLayout {
                 anchors.fill: parent

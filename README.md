@@ -14,7 +14,9 @@ A native Omarchy dashboard with a cyberpunk command-center aesthetic.
 - Mission Control with outstanding tasks, upcoming reminders, recent GitHub activity, and live Omarchy weather
 - Optional `SUPER + ALT + D` dashboard keybinding, enabled explicitly from the dashboard
 - Theme Reactor for live theme selection, palette-star previews, background cycling, and wallpaper telemetry
-- Persistent System Readiness Ring for resources, power, updates, and radio state with attention-only warning arcs
+- Persistent System Readiness Ring for resources, power, updates, and radio state, with load-proportional arcs and attention-only warning highlights
+- Reactive forge core: the sun shifts from accent toward urgent, breathes faster, and spins hotter as CPU/GPU load and warnings rise, firing flare shockwaves for each active warning
+- HUD chassis: every module renders inside a clipped-corner frame with corner brackets, ruler ticks, a designation tag, and a slow scan sweep
 - Replayable startup briefing with live CPU, GPU, memory, disk, uptime, weather, GitHub, and objective status
 - Native Flight Modes that coordinate Omarchy power, idle, notification, and nightlight state
 - Workspace Radar maps active Hyprland workspaces to planets and their windows to draggable moons, with inferred roles, load/fullscreen telemetry, focus glow, urgent distress pulses, and direct focus/move/close operations
@@ -45,7 +47,10 @@ The dashboard opens with all panels hidden. While the core has focus, press
 Arrow keys and Tab cycle modules, Enter focuses the selected panel, and
 Ctrl+Space returns to the core. Clicking a planet toggles its panel;
 double-clicking focuses it. Escape minimizes the active module and returns
-focus to the orbital picker. Planet icons use
+focus to the orbital picker. On wide windows the forge stays docked to the left
+of the open module as a miniature navigator, with an energy conduit routed from
+the selected planet into the panel; click any planet or index entry to switch
+modules. Narrow windows swap the forge out for the panel instead. Planet icons use
 Omarchy's JetBrainsMono Nerd Font. Animation pauses on hover and while closed.
 
 ## GitHub setup

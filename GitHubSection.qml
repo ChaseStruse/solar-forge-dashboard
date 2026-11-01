@@ -130,7 +130,7 @@ Column {
                         text: modelData.label
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 9
+                        font.pixelSize: 11
                         font.letterSpacing: 0.7
                     }
                 }
@@ -218,7 +218,7 @@ Column {
                             text: modelData.kind + "  //  " + modelData.repository
                             color: root.itemColor(modelData)
                             font.family: Style.font.menuFamily
-                            font.pixelSize: 10
+                            font.pixelSize: 11
                             font.bold: true
                             font.letterSpacing: 0.6
                         }
@@ -226,7 +226,7 @@ Column {
                             text: root.ageLabel(modelData.updatedAt)
                             color: root.theme.faintTextColor
                             font.family: Style.font.menuFamily
-                            font.pixelSize: 10
+                            font.pixelSize: 11
                         }
                     }
                     Text {
@@ -245,7 +245,7 @@ Column {
                         text: modelData.detail
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                     }
                 }
                 MouseArea {
@@ -277,7 +277,7 @@ Column {
             text: "RECENTLY ACTIVE"
             color: root.theme.faintTextColor
             font.family: Style.font.menuFamily
-            font.pixelSize: 10
+            font.pixelSize: 11
         }
     }
 
@@ -316,7 +316,7 @@ Column {
                         text: String(modelData.stargazerCount || 0) + " ★  ·  pushed " + root.ageLabel(modelData.pushedAt)
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 9
+                        font.pixelSize: 11
                     }
                 }
                 MouseArea {
@@ -334,6 +334,6 @@ Column {
         text: "[ ARROWS / HJKL ] SELECT  ·  [ ENTER ] OPEN  ·  [ F5 ] SYNC  ·  [ ESC ] ORBIT"
         color: root.theme.faintTextColor
         font.family: Style.font.menuFamily
-        font.pixelSize: 10
+        font.pixelSize: 11
     }
 }

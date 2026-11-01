@@ -3,6 +3,8 @@ import QtQuick.Controls
 import qs.Commons
 
 // Projected solar system: static painted lighting, scene-graph orbital motion.
+// The sun is the system's heat gauge; when a module is open the whole core
+// docks beside it as a navigator.
 Item {
     id: root
     required property DashboardTheme theme
@@ -13,6 +15,7 @@ Item {
     onAnimatingChanged: if (!animating) pointerPaused = false
     property real corePhase: 0
     property int selectedModule: -1
+    property bool docked: false
     signal moduleSelected(int module)
     signal moduleNavigated(int module)
     signal moduleOpened(int module)
@@ -20,10 +23,33 @@ Item {
     readonly property real innerModuleOrbit: 0.33
     readonly property real outerModuleOrbit: 0.45
     readonly property real chamberSize: Math.min(width, 860)
+    // The tilted orbit is wide and shallow; a square chamber wastes the top
+    // and bottom thirds. Docked cores stay square to fit the narrow column.
+    readonly property real chamberHeight: docked ? chamberSize * 0.82 : chamberSize * 0.6
     readonly property real sunCanvasSize: Math.min(256, chamberSize * 0.5)
-    // Keep room for the control status beneath the orbit field.
-    implicitHeight: chamberSize + 50
+    implicitHeight: chamberHeight + (docked ? satelliteIndex.implicitHeight + 16 : 50)
     focus: true
+
+    readonly property var modules: [
+        { name: "OBJECTIVES", key: "T", glyph: "" },
+        { name: "GITHUB INTEL", key: "G", glyph: "" },
+        { name: "MISSION TIMELINE", key: "M", glyph: "" },
+        { name: "FLIGHT MODES", key: "F", glyph: "󰈐" },
+        { name: "WORKSPACE RADAR", key: "W", glyph: "󰍹" },
+        { name: "THEME REACTOR", key: "R", glyph: "󰏘" }
+    ]
+
+    // 0 = idle, 1 = critical. Load drives the base; active warnings add heat.
+    readonly property real heat: {
+        var s = readinessSource;
+        var load = Math.max(s.cpuPercent, s.gpuPercent, 0) / 100;
+        var thermal = s.gpuTemperature > 0 ? Math.max(0, (s.gpuTemperature - 50) / 40) : 0;
+        return Math.max(0, Math.min(1, Math.max(load, thermal) + s.warningCount * 0.18));
+    }
+    readonly property string forgeState: heat >= 0.75 ? "CRITICAL" : heat >= 0.45 ? "ELEVATED" : "STABLE"
+    readonly property color sunColor: theme.mix(theme.accentColor, theme.urgentColor, Math.max(0, heat - 0.25) / 0.75)
+    property real surfaceAngle: 0
+    property real pulsePhase: 0
 
     function focusPicker() {
         forceActiveFocus();
@@ -37,35 +63,41 @@ Item {
         return chamber.height / 2 + Math.sin(angle) * radius * orbitTilt;
     }
 
+    // Alternate modules between two three-planet orbits. Integer speeds
+    // preserve the seamless animation loop.
+    function planetOrbit(index) {
+        return chamber.width * (index % 2 === 0 ? innerModuleOrbit : outerModuleOrbit);
+    }
+    function planetAngle(index, phase) {
+        var inner = index % 2 === 0;
+        return phase * (inner ? 2 : 1) + Math.floor(index / 2) * Math.PI * 2 / 3 + (inner ? 0 : Math.PI / 3);
+    }
+
+    // Selected planet centre in this item's coordinates, for the conduit.
+    readonly property point selectedPoint: selectedModule < 0 ? Qt.point(width / 2, chamber.height / 2)
+        : Qt.point(chamber.x + orbitX(planetAngle(selectedModule, corePhase), planetOrbit(selectedModule)),
+                   chamber.y + orbitY(planetAngle(selectedModule, corePhase), planetOrbit(selectedModule)))
+
     Keys.onPressed: function(event) {
-        if (event.key === Qt.Key_Left || event.key === Qt.Key_Up
-                || event.key === Qt.Key_Right || event.key === Qt.Key_Down
-                || event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+        if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
+            root.moduleNavigated((root.selectedModule + 5) % 6);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
             root.moduleNavigated((root.selectedModule + 1) % 6);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_T) {
-            if (!event.isAutoRepeat) root.moduleSelected(0);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_G) {
-            if (!event.isAutoRepeat) root.moduleSelected(1);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_M) {
-            if (!event.isAutoRepeat) root.moduleSelected(2);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_F) {
-            if (!event.isAutoRepeat) root.moduleSelected(3);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_W) {
-            if (!event.isAutoRepeat) root.moduleSelected(4);
-            event.accepted = true;
-        } else if (event.key === Qt.Key_R) {
-            if (!event.isAutoRepeat) root.moduleSelected(5);
             event.accepted = true;
         } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
                 || event.key === Qt.Key_Space) {
             if (root.selectedModule >= 0)
                 root.moduleOpened(root.selectedModule);
             event.accepted = true;
+        } else {
+            for (var i = 0; i < modules.length; i++) {
+                if (event.text.toUpperCase() === modules[i].key) {
+                    if (!event.isAutoRepeat) root.moduleSelected(i);
+                    event.accepted = true;
+                    return;
+                }
+            }
         }
     }
 
@@ -78,10 +110,19 @@ Item {
         paused: !root.animating || root.pointerPaused
     }
 
+    // Heat-scaled motion: hotter cores churn and breathe faster.
+    FrameAnimation {
+        running: root.animating
+        onTriggered: {
+            root.surfaceAngle = (root.surfaceAngle + frameTime * (8 + root.heat * 110)) % 360;
+            root.pulsePhase = (root.pulsePhase + frameTime * (1.1 + root.heat * 5)) % (Math.PI * 2);
+        }
+    }
+
     Item {
         id: chamber
         width: root.chamberSize
-        height: width
+        height: root.chamberHeight
         anchors.horizontalCenter: parent.horizontalCenter
 
         Repeater {
@@ -96,6 +137,38 @@ Item {
                 color: root.theme.foregroundColor
                 opacity: 0.08 + (1 + Math.sin(root.corePhase * 2 + index)) * 0.06
                 z: -3
+            }
+        }
+
+        // Perspective deck grid beneath the orbital plane.
+        Canvas {
+            anchors.fill: parent
+            z: -2.5
+            property color ink: root.theme.accentColor
+            onInkChanged: requestPaint()
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+            onPaint: {
+                var c = getContext("2d");
+                c.reset();
+                var cx = width / 2, cy = height / 2, rx = width * 0.5, ry = rx * root.orbitTilt;
+                c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 1);
+                c.lineWidth = 1;
+                for (var k = 1; k <= 7; k++) {
+                    var t = k / 7;
+                    c.globalAlpha = 0.07 * (1 - t * 0.6);
+                    c.beginPath();
+                    c.ellipse(cx - rx * t, cy - ry * t, rx * t * 2, ry * t * 2);
+                    c.stroke();
+                }
+                for (var s = 0; s < 24; s++) {
+                    var a = s * Math.PI / 12;
+                    c.globalAlpha = s % 6 === 0 ? 0.1 : 0.045;
+                    c.beginPath();
+                    c.moveTo(cx + Math.cos(a) * rx * 0.2, cy + Math.sin(a) * ry * 0.2);
+                    c.lineTo(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry);
+                    c.stroke();
+                }
             }
         }
 
@@ -128,37 +201,94 @@ Item {
             }
         }
 
-        // Paint the soft corona and luminous sphere once, then move its
-        // faint surface texture with a scene-graph rotation.
-        Canvas {
-            id: sun
+        // Paint the corona and luminous sphere; colour tracks heat, scale
+        // breathes with it, and the texture spins faster as load climbs.
+        Item {
+            id: sunBody
             width: root.sunCanvasSize
             height: width
             anchors.centerIn: parent
             z: 0
-            property color ink: root.theme.accentColor
-            onInkChanged: requestPaint()
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            onPaint: {
-                var c = getContext("2d");
-                c.reset();
-                var m = width / 2, r = width * 0.19;
-                var halo = c.createRadialGradient(m, m, r * 0.65, m, m, m);
-                halo.addColorStop(0, Qt.rgba(ink.r, ink.g, ink.b, 0.7));
-                halo.addColorStop(0.36, Qt.rgba(ink.r, ink.g, ink.b, 0.22));
-                halo.addColorStop(1, Qt.rgba(ink.r, ink.g, ink.b, 0));
-                c.fillStyle = halo;
-                c.fillRect(0, 0, width, height);
-                var surface = c.createRadialGradient(m-r*0.3, m-r*0.3, 0, m, m, r);
-                surface.addColorStop(0, Qt.lighter(ink, 2.8));
-                surface.addColorStop(0.42, Qt.lighter(ink, 1.9));
-                surface.addColorStop(0.78, Qt.lighter(ink, 1.35));
-                surface.addColorStop(1, ink);
-                c.beginPath(); c.arc(m, m, r, 0, Math.PI * 2);
-                c.fillStyle = surface; c.fill();
+            scale: 1 + Math.sin(root.pulsePhase) * (0.015 + root.heat * 0.045)
+
+            Canvas {
+                id: sun
+                anchors.fill: parent
+                property color ink: root.sunColor
+                Behavior on ink { ColorAnimation { duration: 1400 } }
+                onInkChanged: requestPaint()
+                onWidthChanged: requestPaint()
+                onHeightChanged: requestPaint()
+                onPaint: {
+                    var c = getContext("2d");
+                    c.reset();
+                    var m = width / 2, r = width * 0.19;
+                    var halo = c.createRadialGradient(m, m, r * 0.65, m, m, m);
+                    halo.addColorStop(0, Qt.rgba(ink.r, ink.g, ink.b, 0.7));
+                    halo.addColorStop(0.36, Qt.rgba(ink.r, ink.g, ink.b, 0.22));
+                    halo.addColorStop(1, Qt.rgba(ink.r, ink.g, ink.b, 0));
+                    c.fillStyle = halo;
+                    c.fillRect(0, 0, width, height);
+                    var surface = c.createRadialGradient(m-r*0.3, m-r*0.3, 0, m, m, r);
+                    surface.addColorStop(0, Qt.lighter(ink, 2.8));
+                    surface.addColorStop(0.42, Qt.lighter(ink, 1.9));
+                    surface.addColorStop(0.78, Qt.lighter(ink, 1.35));
+                    surface.addColorStop(1, ink);
+                    c.beginPath(); c.arc(m, m, r, 0, Math.PI * 2);
+                    c.fillStyle = surface; c.fill();
+                }
+            }
+            Canvas {
+                width: parent.width * 0.38
+                height: width
+                anchors.centerIn: parent
+                rotation: root.surfaceAngle
+                opacity: 0.13 + root.heat * 0.2
+                property color ink: root.sunColor
+                onInkChanged: requestPaint()
+                onWidthChanged: requestPaint()
+                onHeightChanged: requestPaint()
+                onPaint: {
+                    var c = getContext("2d"); c.reset();
+                    for (var i = 0; i < 65; i++) {
+                        var a = i * 2.39996, r = Math.sqrt(i / 65) * width * 0.46;
+                        c.beginPath();
+                        c.arc(width/2 + Math.cos(a)*r, height/2 + Math.sin(a)*r,
+                              0.7 + i % 3 * 0.4, 0, Math.PI*2);
+                        c.fillStyle = i % 2 ? Qt.lighter(ink, 2.4) : Qt.darker(ink, 1.5); c.fill();
+                    }
+                }
             }
         }
+
+        // Flares: an expanding shockwave for each active warning.
+        Repeater {
+            model: Math.min(3, root.readinessSource.warningCount)
+            Rectangle {
+                id: flare
+                required property int index
+                anchors.centerIn: parent
+                width: root.sunCanvasSize * 0.4
+                height: width
+                radius: width / 2
+                color: "transparent"
+                border.color: root.theme.urgentColor
+                border.width: 2
+                opacity: 0
+                z: 0.2
+                SequentialAnimation {
+                    running: root.animating
+                    loops: Animation.Infinite
+                    PauseAnimation { duration: flare.index * 700 }
+                    ParallelAnimation {
+                        NumberAnimation { target: flare; property: "scale"; from: 0.6; to: 2.4; duration: 2100; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: flare; property: "opacity"; from: 0.7; to: 0; duration: 2100; easing.type: Easing.OutQuad }
+                    }
+                    PauseAnimation { duration: (2 - flare.index) * 700 }
+                }
+            }
+        }
+
         ReadinessRing {
             width: Math.min(292, chamber.width * 0.43)
             height: width
@@ -167,27 +297,16 @@ Item {
             theme: root.theme
             source: root.readinessSource
         }
-        Canvas {
-            width: root.sunCanvasSize * 0.38
+        ReadinessRing {
+            width: Math.min(292, chamber.width * 0.43)
             height: width
             anchors.centerIn: parent
-            z: 0.1
-            rotation: root.corePhase * 360 / (Math.PI * 2)
-            opacity: 0.13
-            property color ink: root.theme.accentColor
-            onInkChanged: requestPaint()
-            onWidthChanged: requestPaint()
-            onHeightChanged: requestPaint()
-            onPaint: {
-                var c = getContext("2d"); c.reset();
-                for (var i = 0; i < 65; i++) {
-                    var a = i * 2.39996, r = Math.sqrt(i / 65) * width * 0.46;
-                    c.beginPath();
-                    c.arc(width/2 + Math.cos(a)*r, height/2 + Math.sin(a)*r,
-                          0.7 + i % 3 * 0.4, 0, Math.PI*2);
-                    c.fillStyle = i % 2 ? Qt.lighter(ink, 2.4) : Qt.darker(ink, 1.5); c.fill();
-                }
-            }
+            z: 3
+            theme: root.theme
+            source: root.readinessSource
+            labelLayer: true
+            // Docked cores are too small for readouts; arcs carry the state.
+            visible: !root.docked
         }
 
         Repeater {
@@ -212,33 +331,39 @@ Item {
             Item {
                 id: planet
                 required property int index
-                // Alternate modules between two three-planet orbits. Integer
-                // speeds preserve the seamless animation loop.
-                readonly property bool innerOrbit: index % 2 === 0
-                readonly property real orbitRadius: chamber.width * (innerOrbit
-                    ? root.innerModuleOrbit : root.outerModuleOrbit)
-                readonly property real angle: root.corePhase * (innerOrbit ? 2 : 1)
-                    + Math.floor(index / 2) * Math.PI * 2 / 3
-                    + (innerOrbit ? 0 : Math.PI / 3)
+                readonly property real orbitRadius: root.planetOrbit(index)
+                readonly property real angle: root.planetAngle(index, root.corePhase)
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
-                width: Math.max(44, chamber.width * 0.078)
+                width: Math.max(root.docked ? 34 : 44, chamber.width * 0.078)
                 height: width
                 x: root.orbitX(angle, orbitRadius) - width / 2
                 y: root.orbitY(angle, orbitRadius) - height / 2
                 z: depth < 0 ? -1 : 2
                 scale: 0.9 + depth * 0.13
                 opacity: 0.82 + depth * 0.16
-                Rectangle {
+                // Targeting reticle: spinning dashed ring with corner ticks.
+                Item {
                     anchors.fill: parent
-                    anchors.margins: -5
-                    radius: width / 2
-                    color: "transparent"
-                    border.color: root.theme.secondaryAccentColor
-                    opacity: planet.selected ? 0.9 : pointer.containsMouse ? 0.5 : 0
-                    scale: planet.selected ? 1.08 : 1
+                    anchors.margins: -7
+                    opacity: planet.selected ? 1 : pointer.containsMouse ? 0.55 : 0
                     Behavior on opacity { NumberAnimation { duration: 220 } }
-                    Behavior on scale { NumberAnimation { duration: 220 } }
+                    Canvas {
+                        anchors.fill: parent
+                        rotation: root.corePhase * 180 / Math.PI * 6
+                        property color ink: root.theme.secondaryAccentColor
+                        onInkChanged: requestPaint()
+                        onWidthChanged: requestPaint()
+                        onPaint: {
+                            var c = getContext("2d"); c.reset();
+                            var m = width / 2;
+                            c.strokeStyle = ink; c.lineWidth = 1.5;
+                            for (var q = 0; q < 4; q++) {
+                                var a = q * Math.PI / 2;
+                                c.beginPath(); c.arc(m, m, m - 2, a + 0.25, a + Math.PI / 2 - 0.25); c.stroke();
+                            }
+                        }
+                    }
                 }
                 Canvas {
                     anchors.fill: parent
@@ -246,7 +371,9 @@ Item {
                     rotation: Math.atan2(chamber.height/2 - planet.y - planet.height/2,
                                          chamber.width/2 - planet.x - planet.width/2) * 180 / Math.PI
                     property color ink: root.theme.secondaryAccentColor
+                    property color shade: root.theme.backgroundColor
                     onInkChanged: requestPaint()
+                    onShadeChanged: requestPaint()
                     onWidthChanged: requestPaint()
                     onHeightChanged: requestPaint()
                     onPaint: {
@@ -255,19 +382,22 @@ Item {
                         var g = c.createRadialGradient(m+r*0.65, m-r*0.15, 0, m, m, r);
                         g.addColorStop(0, Qt.lighter(ink, 2.3));
                         g.addColorStop(0.45, ink);
-                        g.addColorStop(1, "#10141f");
+                        g.addColorStop(1, Qt.darker(shade, 1.4));
                         c.beginPath(); c.arc(m, m, r, 0, Math.PI*2);
                         c.fillStyle = g; c.fill();
+                        c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.8);
+                        c.lineWidth = 1;
+                        c.stroke();
                     }
                 }
                 Text {
                     anchors.centerIn: parent
-                    // Font Awesome checklist and GitHub marks in Omarchy's
-                    // bundled Nerd Font; independent of the user's text face.
-                    text: planet.index === 0 ? "\uf0ae" : planet.index === 1 ? "\uf09b" : planet.index === 2 ? "\uf017" : planet.index === 3 ? "󰈐" : planet.index === 4 ? "󰍹" : "󰏘"
+                    // Glyphs come from Omarchy's bundled Nerd Font,
+                    // independent of the user's text face.
+                    text: root.modules[planet.index].glyph
                     color: root.theme.foregroundColor
                     font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: Math.max(18, planet.width * 0.4)
+                    font.pixelSize: Math.max(15, planet.width * 0.4)
                 }
                 Rectangle {
                     visible: planet.index === 1 && root.githubSource.actionableCount > 0
@@ -287,25 +417,16 @@ Item {
                         text: root.githubSource.actionableCount > 99 ? "99+" : String(root.githubSource.actionableCount)
                         color: root.theme.backgroundColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 9
+                        font.pixelSize: 10
                         font.bold: true
                     }
                 }
                 ToolTip.visible: pointer.containsMouse
                 ToolTip.delay: 350
-                ToolTip.text: planet.index === 0
-                    ? "Objectives · T to toggle · Enter to focus"
-                    : planet.index === 1
-                        ? "GitHub Action Center" + (root.githubSource.actionableCount
-                            ? " · " + root.githubSource.actionableCount + " need attention" : " · inbox clear")
-                            + " · G to toggle · Enter to focus"
-                        : planet.index === 2
-                            ? "Mission timeline · M to toggle · Enter to focus"
-                            : planet.index === 3
-                                ? "Flight Modes · F to toggle · Enter to focus"
-                                : planet.index === 4
-                                    ? "Workspace Radar · W to toggle · Enter to focus"
-                                    : "Theme Reactor · R to toggle · Enter to focus"
+                ToolTip.text: root.modules[planet.index].name
+                    + (planet.index === 1 ? (root.githubSource.actionableCount
+                        ? " · " + root.githubSource.actionableCount + " need attention" : " · inbox clear") : "")
+                    + " · " + root.modules[planet.index].key + " to toggle · Enter to focus"
                 MouseArea {
                     id: pointer
                     anchors.fill: parent
@@ -322,26 +443,87 @@ Item {
         }
     }
 
-    Text {
+    Column {
+        visible: !root.docked
         anchors.top: chamber.bottom
-        anchors.topMargin: 10
+        anchors.topMargin: 6
         anchors.horizontalCenter: parent.horizontalCenter
-        text: root.selectedModule === 0
-            ? "● OBJECTIVES SELECTED  //  [ ENTER ] TO FOCUS"
-            : root.selectedModule === 1
-                ? "● GITHUB INTEL SELECTED  //  [ ENTER ] TO FOCUS"
-                : root.selectedModule === 2
-                    ? "● MISSION TIMELINE SELECTED  //  [ ENTER ] TO FOCUS"
-                    : root.selectedModule === 3
-                        ? "● FLIGHT MODES SELECTED  //  [ ENTER ] TO FOCUS"
-                        : root.selectedModule === 4
-                            ? "● WORKSPACE RADAR SELECTED  //  [ ENTER ] TO FOCUS"
-                            : root.selectedModule === 5
-                                ? "● THEME REACTOR SELECTED  //  [ ENTER ] TO FOCUS"
-                                : "● SELECT  //  [ T ] TASKS  ·  [ G ] GITHUB  ·  [ M ] TIMELINE  ·  [ F ] FLIGHT  ·  [ W ] RADAR  ·  [ R ] REACTOR"
-        color: root.theme.urgentColor
-        font.family: Style.font.menuFamily
-        font.pixelSize: 11
-        font.letterSpacing: 1.3
+        spacing: 6
+        Text {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "FORGE " + root.forgeState + "  //  "
+                + (root.selectedModule >= 0
+                    ? root.modules[root.selectedModule].name + " SELECTED  ·  [ ENTER ] TO FOCUS"
+                    : root.modules.map(function(m) { return "[" + m.key + "] " + m.name.split(" ")[0]; }).join("  "))
+            color: root.forgeState === "STABLE" ? root.theme.accentColor : root.theme.urgentColor
+            font.family: Style.font.menuFamily
+            font.pixelSize: root.theme.fontMicro
+            font.bold: true
+            font.letterSpacing: 1.3
+        }
+    }
+
+    // Docked navigator: compact module index under the miniature core.
+    Column {
+        id: satelliteIndex
+        visible: root.docked
+        anchors.top: chamber.bottom
+        anchors.topMargin: 8
+        anchors.left: parent.left
+        anchors.right: parent.right
+        spacing: 4
+        Text {
+            text: "FORGE " + root.forgeState + "  ·  " + Math.round(root.heat * 100) + "% HEAT"
+            color: root.forgeState === "STABLE" ? root.theme.accentColor : root.theme.urgentColor
+            font.family: Style.font.menuFamily
+            font.pixelSize: root.theme.fontMicro
+            font.bold: true
+            font.letterSpacing: 1.3
+            bottomPadding: 4
+        }
+        Repeater {
+            model: root.modules
+            Rectangle {
+                id: indexRow
+                required property int index
+                required property var modelData
+                readonly property bool current: root.selectedModule === index
+                width: satelliteIndex.width
+                height: 28
+                color: current ? Util.alpha(root.theme.accentColor, 0.14) : rowMouse.containsMouse ? root.theme.surfaceColor : "transparent"
+                Rectangle {
+                    width: 3; height: parent.height
+                    color: root.theme.accentColor
+                    visible: indexRow.current
+                }
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: 12
+                    spacing: 10
+                    Text {
+                        text: "[" + indexRow.modelData.key + "]"
+                        color: indexRow.current ? root.theme.accentColor : root.theme.faintTextColor
+                        font.family: Style.font.menuFamily
+                        font.pixelSize: root.theme.fontMicro
+                        font.bold: true
+                    }
+                    Text {
+                        text: indexRow.modelData.name
+                        color: indexRow.current ? root.theme.foregroundColor : root.theme.dimmedTextColor
+                        font.family: Style.font.menuFamily
+                        font.pixelSize: root.theme.fontSmall
+                        font.bold: indexRow.current
+                        font.letterSpacing: 1
+                    }
+                }
+                MouseArea {
+                    id: rowMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.moduleOpened(indexRow.index)
+                }
+            }
+        }
     }
 }

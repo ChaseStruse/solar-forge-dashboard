@@ -101,7 +101,7 @@ Column {
                         text: modelData.label
                         color: root.theme.dimmedTextColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                         font.letterSpacing: 1
                     }
                 }
@@ -156,7 +156,7 @@ Column {
                 text: "REMINDER UPLINK // " + root.reminderTaskTitle
                 color: root.theme.dimmedTextColor
                 font.family: Style.font.menuFamily
-                font.pixelSize: 10
+                font.pixelSize: 11
                 font.bold: true
             }
             Repeater {
@@ -165,7 +165,7 @@ Column {
                     required property int modelData
                     width: 48
                     height: 28
-                    radius: 4
+                    radius: 2
                     color: presetMouse.containsMouse ? root.theme.surfaceColor : "transparent"
                     border.color: root.theme.borderColor
                     Text {
@@ -173,7 +173,7 @@ Column {
                         text: modelData + "m"
                         color: root.theme.foregroundColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 10
+                        font.pixelSize: 11
                         font.bold: true
                     }
                     MouseArea {
@@ -297,14 +297,14 @@ Column {
                         text: done ? "CLOSED" : reminderUnit ? "T−" + root.countdown(reminderDue) : "ACTIVE"
                         color: done ? root.theme.faintTextColor : reminderUnit ? root.theme.accentColor : root.theme.urgentColor
                         font.family: Style.font.menuFamily
-                        font.pixelSize: 9
+                        font.pixelSize: 11
                         font.bold: true
                     }
                     Rectangle {
                         id: reminderButton
                         width: 28
                         height: 28
-                        radius: 4
+                        radius: 2
                         anchors.right: parent.right
                         anchors.rightMargin: 6
                         anchors.verticalCenter: parent.verticalCenter
@@ -397,13 +397,13 @@ Column {
                                 text: modelData.label
                                 color: root.theme.foregroundColor
                                 font.family: Style.font.menuFamily
-                                font.pixelSize: 10
+                                font.pixelSize: 11
                             }
                             Text {
                                 text: "T−" + root.countdown(modelData.at) + "  ·  ETA " + modelData.atTime
                                 color: root.theme.accentColor
                                 font.family: Style.font.menuFamily
-                                font.pixelSize: 9
+                                font.pixelSize: 11
                                 font.bold: true
                             }
                         }
@@ -437,6 +437,6 @@ Column {
         text: "[ ENTER ] ADD OBJECTIVE  ·  [ CLICK ] TOGGLE STATUS  ·  [ ESC ] ORBIT"
         color: root.theme.faintTextColor
         font.family: Style.font.menuFamily
-        font.pixelSize: 10
+        font.pixelSize: 11
     }
 }

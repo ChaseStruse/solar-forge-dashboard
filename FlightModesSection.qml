@@ -9,7 +9,7 @@ Item {
     required property FlightModesSource source
     property bool selected: false
     signal dismissRequested()
-    implicitHeight: content.implicitHeight + 48
+    implicitHeight: content.implicitHeight + 8
 
     onSelectedChanged: {
         if (selected)
@@ -20,19 +20,12 @@ Item {
         modeGrid.forceActiveFocus();
     }
 
-    Rectangle {
-        anchors.fill: parent
-        radius: 12
-        color: Util.alpha(root.theme.backgroundColor, 0.96)
-        border.color: root.theme.borderColor
-    }
-
     Column {
         id: content
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 24
+        anchors.margins: 4
         spacing: 20
 
         Column {
@@ -79,13 +72,13 @@ Item {
                     required property var modelData
                     Layout.fillWidth: true
                     Layout.preferredHeight: 62
-                    radius: 7
+                    radius: 2
                     color: root.theme.surfaceColor
                     border.color: root.theme.borderColor
                     Column {
                         anchors.centerIn: parent
                         spacing: 4
-                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                        Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true; font.letterSpacing: 1 }
                         Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.value; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true }
                     }
                 }
@@ -137,7 +130,7 @@ Item {
                     readonly property bool pending: root.source.pendingMode === modelData.id
                     Layout.fillWidth: true
                     Layout.preferredHeight: 142
-                    radius: 8
+                    radius: 2
                     color: active || pending ? Util.alpha(root.theme.accentColor, 0.12) : root.theme.surfaceColor
                     border.width: modeGrid.keyboardIndex === index || active ? 2 : 1
                     border.color: active || pending || modeGrid.keyboardIndex === index ? root.theme.accentColor : root.theme.borderColor
@@ -158,10 +151,10 @@ Item {
                             RowLayout {
                                 Layout.fillWidth: true
                                 Text { Layout.fillWidth: true; text: modelData.name; color: root.theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 17; font.bold: true; font.letterSpacing: 1.2 }
-                                Text { text: modeCard.pending ? "ENGAGING" : modeCard.active ? "ACTIVE" : "READY"; color: modeCard.active || modeCard.pending ? root.theme.accentColor : root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true; font.letterSpacing: 1 }
+                                Text { text: modeCard.pending ? "ENGAGING" : modeCard.active ? "ACTIVE" : "READY"; color: modeCard.active || modeCard.pending ? root.theme.accentColor : root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true; font.letterSpacing: 1 }
                             }
                             Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: modelData.description; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
-                            Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: modelData.detail; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true; font.letterSpacing: 0.5 }
+                            Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: modelData.detail; color: root.theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true; font.letterSpacing: 0.5 }
                         }
                     }
                     MouseArea {
@@ -183,7 +176,7 @@ Item {
         Rectangle {
             width: parent.width
             height: 46
-            radius: 7
+            radius: 2
             color: Util.alpha(root.theme.accentColor, 0.07)
             border.color: root.theme.borderColor
             RowLayout {
@@ -192,7 +185,7 @@ Item {
                 anchors.rightMargin: 14
                 spacing: 10
                 Rectangle {
-                    width: 7; height: 7; radius: 4
+                    width: 7; height: 7; radius: 2
                     color: root.source.loading ? root.theme.urgentColor : root.theme.accentColor
                     SequentialAnimation on opacity {
                         loops: Animation.Infinite
@@ -202,7 +195,7 @@ Item {
                     }
                 }
                 Text { Layout.fillWidth: true; text: root.source.status; elide: Text.ElideRight; color: root.theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true; font.letterSpacing: 0.8 }
-                Text { text: "[ R ] RESCAN"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 10; font.bold: true }
+                Text { text: "[ R ] RESCAN"; color: root.theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 11; font.bold: true }
                 MouseArea { Layout.preferredWidth: 78; Layout.fillHeight: true; enabled: !root.source.loading; cursorShape: Qt.PointingHandCursor; onClicked: root.source.refresh() }
             }
         }

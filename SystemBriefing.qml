@@ -39,13 +39,11 @@ Rectangle {
     Timer { id: reveal; interval: 700; onTriggered: root.stage = 1 }
 
     MouseArea { anchors.fill: parent }
-    Rectangle {
+    Item {
         width: Math.min(parent.width - 64, 720)
         height: briefingContent.implicitHeight + 48
         anchors.centerIn: parent
-        radius: 12
-        color: theme.backgroundColor
-        border.color: Util.alpha(theme.accentColor, 0.55)
+        HudFrame { anchors.fill: parent; theme: root.theme; tag: "SF-00  //  IGNITION"; active: root.visible; fillOpacity: 1 }
         Column {
             id: briefingContent
             anchors.left: parent.left; anchors.right: parent.right; anchors.top: parent.top
@@ -60,7 +58,7 @@ Rectangle {
                     { label: "MEMORY", value: source.memory },
                     { label: "DISK", value: source.disk },
                     { label: "UPTIME", value: source.uptime }
-                ]; Rectangle { required property var modelData; Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: theme.surfaceColor; border.color: theme.borderColor
+                ]; Rectangle { required property var modelData; Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 2; color: theme.surfaceColor; border.color: theme.borderColor
                     Column { anchors.fill: parent; anchors.margins: 11; spacing: 7
                         Text { text: modelData.label; color: theme.faintTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1 }
                         Text { width: parent.width; elide: Text.ElideRight; text: modelData.value; color: theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true }
@@ -73,7 +71,7 @@ Rectangle {
                     Text { width: parent.width; wrapMode: Text.Wrap; text: source.gpuDetail + "  ·  " + objectiveCount + " active objectives  ·  " + missionSource.repositories.length + " GitHub repositories synced"; color: theme.dimmedTextColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }
                 }
             }
-            Rectangle { width: parent.width; height: 54; radius: 6; color: Util.alpha(theme.accentColor, 0.09); border.color: Util.alpha(theme.accentColor, 0.32)
+            Rectangle { width: parent.width; height: 54; radius: 2; color: Util.alpha(theme.accentColor, 0.09); border.color: Util.alpha(theme.accentColor, 0.32)
                 RowLayout { anchors.fill: parent; anchors.margins: 12
                     Text { text: "RECOMMENDATION"; color: theme.accentColor; font.family: Style.font.menuFamily; font.pixelSize: 12; font.bold: true; font.letterSpacing: 1 }
                     Text { Layout.fillWidth: true; wrapMode: Text.Wrap; text: source.recommendation; color: theme.foregroundColor; font.family: Style.font.menuFamily; font.pixelSize: 12 }

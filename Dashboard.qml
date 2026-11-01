@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -226,110 +227,198 @@ Item {
                         id: commandDeck
                         width: parent.width
                         readonly property bool compact: width < 780
-                        readonly property real branchWidth: compact
-                            ? width
-                            : Math.min(280, width * 0.29)
-                        height: root.activeModule >= 0
-                            ? (root.activeModule === 0 ? tasks.implicitHeight
-                                : root.activeModule === 1 ? projects.implicitHeight
-                                : root.activeModule === 2 ? missionLog.implicitHeight
-                                : root.activeModule === 3 ? flightModePanel.implicitHeight
-                                : root.activeModule === 4 ? workspaceRadar.implicitHeight
-                                : themeReactorPanel.implicitHeight)
+                        // Wide windows keep the forge docked beside the open
+                        // module; narrow ones swap it out entirely.
+                        readonly property bool docked: !compact && root.activeModule >= 0
+                        readonly property real dockWidth: Math.min(300, width * 0.28)
+                        readonly property real dockGap: 36
+                        readonly property var activePanel: root.activeModule === 0 ? tasks
+                            : root.activeModule === 1 ? projects
+                            : root.activeModule === 2 ? missionLog
+                            : root.activeModule === 3 ? flightModePanel
+                            : root.activeModule === 4 ? workspaceRadar
+                            : root.activeModule === 5 ? themeReactorPanel : null
+                        height: activePanel
+                            ? Math.max(panelHost.y + panelHost.height, docked ? core.height : 0)
                             : core.height
 
                         ForgeCore {
                             id: core
-                            width: commandDeck.compact
-                                ? Math.min(620, commandDeck.width)
-                                : Math.min(860, commandDeck.width * 0.82)
+                            width: commandDeck.docked
+                                ? commandDeck.dockWidth
+                                : commandDeck.compact
+                                    ? Math.min(620, commandDeck.width)
+                                    : Math.min(860, commandDeck.width * 0.82)
                             height: implicitHeight
-                            x: (commandDeck.width - width) / 2
+                            x: commandDeck.docked ? 0 : (commandDeck.width - width) / 2
                             y: 0
+                            Behavior on width { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+                            Behavior on x { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
                             theme: dashboardTheme
                             readinessSource: readiness
                             githubSource: github
                             selectedModule: root.activeModule
+                            docked: commandDeck.docked
                             animating: root.opened && visible
-                            visible: root.activeModule < 0
+                            visible: root.activeModule < 0 || commandDeck.docked
                             onModuleSelected: function(module) { root.toggleModule(module); }
                             onModuleNavigated: function(module) { root.selectModule(module); }
                             onModuleOpened: function(module) { root.openModule(module); }
                         }
-                        TodoSection {
-                            id: tasks
-                            z: 2
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            store: todos
-                            reminderSource: reminders
-                            selected: root.activeModule === 0
-                            visible: root.activeModule === 0
-                            onDismissRequested: root.releaseFocus()
-                        }
-                        GitHubSection {
-                            id: projects
-                            z: 2
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            source: github
-                            selected: root.activeModule === 1
-                            visible: root.activeModule === 1
-                            onDismissRequested: root.releaseFocus()
-                        }
-                        MissionTimeline {
-                            id: missionLog
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            source: missionSource
-                            taskStore: todos
-                            reminderSource: reminders
-                            selected: root.activeModule === 2
-                            visible: root.activeModule === 2
-                            onDismissRequested: root.releaseFocus()
-                            onReplayBriefing: {
-                                systemSource.refresh();
-                                systemBriefing.play();
+
+                        // Energy conduit routed from the selected planet into
+                        // the open module, with a pulse travelling along it.
+                        Shape {
+                            id: conduit
+                            anchors.fill: parent
+                            visible: commandDeck.docked
+                            preferredRendererType: Shape.CurveRenderer
+                            readonly property point start: Qt.point(core.x + core.selectedPoint.x, core.y + core.selectedPoint.y)
+                            readonly property real midX: commandDeck.dockWidth + commandDeck.dockGap / 2
+                            readonly property real endY: 56
+                            readonly property color ink: dashboardTheme.accentColor
+                            property real travel: 0
+                            NumberAnimation on travel {
+                                from: 0; to: 1; duration: 1600
+                                loops: Animation.Infinite
+                                running: conduit.visible && root.opened
+                            }
+                            function pointAt(t) {
+                                var a = Math.abs(midX - start.x), b = Math.abs(endY - start.y), c = panelHost.x - midX;
+                                var d = t * (a + b + c);
+                                if (d <= a) return Qt.point(start.x + Math.sign(midX - start.x) * d, start.y);
+                                d -= a;
+                                if (d <= b) return Qt.point(midX, start.y + Math.sign(endY - start.y) * d);
+                                return Qt.point(midX + d - b, endY);
+                            }
+                            ShapePath {
+                                strokeColor: Util.alpha(conduit.ink, 0.18)
+                                strokeWidth: 5
+                                fillColor: "transparent"
+                                joinStyle: ShapePath.MiterJoin
+                                startX: conduit.start.x; startY: conduit.start.y
+                                PathLine { x: conduit.midX; y: conduit.start.y }
+                                PathLine { x: conduit.midX; y: conduit.endY }
+                                PathLine { x: panelHost.x; y: conduit.endY }
+                            }
+                            ShapePath {
+                                strokeColor: Util.alpha(conduit.ink, 0.75)
+                                strokeWidth: 1
+                                strokeStyle: ShapePath.DashLine
+                                dashPattern: [4, 3]
+                                fillColor: "transparent"
+                                joinStyle: ShapePath.MiterJoin
+                                startX: conduit.start.x; startY: conduit.start.y
+                                PathLine { x: conduit.midX; y: conduit.start.y }
+                                PathLine { x: conduit.midX; y: conduit.endY }
+                                PathLine { x: panelHost.x; y: conduit.endY }
+                            }
+                            Rectangle {
+                                readonly property point at: conduit.pointAt(conduit.travel)
+                                width: 7; height: 7; radius: 3.5
+                                x: at.x - width / 2; y: at.y - height / 2
+                                color: Qt.lighter(conduit.ink, 1.5)
+                                border.color: Util.alpha(conduit.ink, 0.4)
+                                border.width: 3
                             }
                         }
-                        FlightModesSection {
-                            id: flightModePanel
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            source: flightModes
-                            selected: root.activeModule === 3
-                            visible: root.activeModule === 3
-                            onDismissRequested: root.releaseFocus()
-                        }
-                        WorkspaceRadar {
-                            id: workspaceRadar
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            source: workspaceRadarSource
-                            selected: root.activeModule === 4
-                            visible: root.activeModule === 4
-                            onDismissRequested: root.releaseFocus()
-                        }
-                        ThemeReactorSection {
-                            id: themeReactorPanel
-                            width: commandDeck.width
-                            x: 0
-                            y: 0
-                            theme: dashboardTheme
-                            source: themeReactor
-                            selected: root.activeModule === 5
-                            visible: root.activeModule === 5
-                            onDismissRequested: root.releaseFocus()
+
+                        Item {
+                            id: panelHost
+                            readonly property int pad: 20
+                            readonly property real innerWidth: width - pad * 2
+                            visible: commandDeck.activePanel !== null
+                            x: commandDeck.docked ? commandDeck.dockWidth + commandDeck.dockGap : 0
+                            y: 10
+                            width: commandDeck.width - x
+                            height: commandDeck.activePanel ? commandDeck.activePanel.implicitHeight + pad * 2 : 0
+                            opacity: visible ? 1 : 0
+                            Behavior on opacity { NumberAnimation { duration: 240 } }
+
+                            HudFrame {
+                                anchors.fill: parent
+                                theme: dashboardTheme
+                                active: root.opened
+                                tag: commandDeck.activePanel
+                                    ? "SF-0" + (root.activeModule + 1) + "  //  " + core.modules[root.activeModule].name
+                                    : ""
+                            }
+
+                            TodoSection {
+                                id: tasks
+                                z: 2
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                store: todos
+                                reminderSource: reminders
+                                selected: root.activeModule === 0
+                                visible: root.activeModule === 0
+                                onDismissRequested: root.releaseFocus()
+                            }
+                            GitHubSection {
+                                id: projects
+                                z: 2
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                source: github
+                                selected: root.activeModule === 1
+                                visible: root.activeModule === 1
+                                onDismissRequested: root.releaseFocus()
+                            }
+                            MissionTimeline {
+                                id: missionLog
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                source: missionSource
+                                taskStore: todos
+                                reminderSource: reminders
+                                selected: root.activeModule === 2
+                                visible: root.activeModule === 2
+                                onDismissRequested: root.releaseFocus()
+                                onReplayBriefing: {
+                                    systemSource.refresh();
+                                    systemBriefing.play();
+                                }
+                            }
+                            FlightModesSection {
+                                id: flightModePanel
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                source: flightModes
+                                selected: root.activeModule === 3
+                                visible: root.activeModule === 3
+                                onDismissRequested: root.releaseFocus()
+                            }
+                            WorkspaceRadar {
+                                id: workspaceRadar
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                source: workspaceRadarSource
+                                selected: root.activeModule === 4
+                                visible: root.activeModule === 4
+                                onDismissRequested: root.releaseFocus()
+                            }
+                            ThemeReactorSection {
+                                id: themeReactorPanel
+                                width: panelHost.innerWidth
+                                x: panelHost.pad
+                                y: panelHost.pad
+                                theme: dashboardTheme
+                                source: themeReactor
+                                selected: root.activeModule === 5
+                                visible: root.activeModule === 5
+                                onDismissRequested: root.releaseFocus()
+                            }
                         }
                     }
                     Rectangle {
@@ -346,14 +435,14 @@ Item {
                                 text: root.shortcutStatus
                                 color: dashboardTheme.dimmedTextColor
                                 font.family: Style.font.menuFamily
-                                font.pixelSize: 10
+                                font.pixelSize: 11
                                 font.bold: true
                                 font.letterSpacing: 0.7
                             }
                             Rectangle {
                                 width: shortcutAction.implicitWidth + 20
                                 height: 28
-                                radius: 4
+                                radius: 2
                                 color: shortcutMouse.containsMouse ? dashboardTheme.accentColor : "transparent"
                                 border.color: dashboardTheme.accentColor
                                 Text {
@@ -362,7 +451,7 @@ Item {
                                     text: root.shortcutConfigured ? "DISABLE SHORTCUT" : "ENABLE SUPER + ALT + D"
                                     color: shortcutMouse.containsMouse ? dashboardTheme.backgroundColor : dashboardTheme.accentColor
                                     font.family: Style.font.menuFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.bold: true
                                 }
                                 MouseArea {
@@ -387,6 +476,7 @@ Item {
             }
             AmbientLayer {
                 anchors.fill: parent
+                theme: dashboardTheme
                 visible: root.opened
                 z: 10
             }
