@@ -94,10 +94,10 @@ Item {
         height: tagText.implicitHeight + 4
         color: root.theme.backgroundColor
         border.color: Util.alpha(root.ink, 0.6)
-        Text {
+        DecodeText {
             id: tagText
             anchors.centerIn: parent
-            text: root.tag
+            source: root.tag
             color: root.ink
             font.family: Style.font.menuFamily
             font.pixelSize: root.theme.fontMicro

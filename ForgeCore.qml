@@ -16,17 +16,21 @@ Item {
     property real corePhase: 0
     property int selectedModule: -1
     property bool docked: false
+    // Upper bound for the orbit chamber; fullscreen layouts raise it.
+    property real maxChamber: 860
+    // 0 → 1 during ignition: the sun swells and planets fly out to orbit.
+    property real ignition: 1
     signal moduleSelected(int module)
     signal moduleNavigated(int module)
     signal moduleOpened(int module)
     readonly property real orbitTilt: 0.42
     readonly property real innerModuleOrbit: 0.33
     readonly property real outerModuleOrbit: 0.45
-    readonly property real chamberSize: Math.min(width, 860)
+    readonly property real chamberSize: Math.min(width, maxChamber)
     // The tilted orbit is wide and shallow; a square chamber wastes the top
     // and bottom thirds. Docked cores stay square to fit the narrow column.
     readonly property real chamberHeight: docked ? chamberSize * 0.82 : chamberSize * 0.6
-    readonly property real sunCanvasSize: Math.min(256, chamberSize * 0.5)
+    readonly property real sunCanvasSize: Math.min(chamberSize * 0.5, Math.max(256, chamberSize * 0.3))
     implicitHeight: chamberHeight + (docked ? satelliteIndex.implicitHeight + 16 : 50)
     focus: true
 
@@ -51,6 +55,20 @@ Item {
     property real surfaceAngle: 0
     property real pulsePhase: 0
 
+    function ignite() {
+        ignitionAnim.restart();
+    }
+    NumberAnimation {
+        id: ignitionAnim
+        target: root
+        property: "ignition"
+        from: 0
+        to: 1
+        duration: 1800
+        easing.type: Easing.OutBack
+        easing.overshoot: 1.2
+    }
+
     function focusPicker() {
         forceActiveFocus();
     }
@@ -66,7 +84,7 @@ Item {
     // Alternate modules between two three-planet orbits. Integer speeds
     // preserve the seamless animation loop.
     function planetOrbit(index) {
-        return chamber.width * (index % 2 === 0 ? innerModuleOrbit : outerModuleOrbit);
+        return chamber.width * (index % 2 === 0 ? innerModuleOrbit : outerModuleOrbit) * ignition;
     }
     function planetAngle(index, phase) {
         var inner = index % 2 === 0;
@@ -143,6 +161,7 @@ Item {
         // Perspective deck grid beneath the orbital plane.
         Canvas {
             anchors.fill: parent
+            opacity: Math.max(0, Math.min(1, root.ignition))
             z: -2.5
             property color ink: root.theme.accentColor
             onInkChanged: requestPaint()
@@ -175,6 +194,7 @@ Item {
         // Static tracks share the same projection and radii as their nodes.
         Canvas {
             anchors.fill: parent
+            opacity: Math.max(0, Math.min(1, root.ignition))
             z: -2
             property color ink: root.theme.accentColor
             onInkChanged: requestPaint()
@@ -209,7 +229,7 @@ Item {
             height: width
             anchors.centerIn: parent
             z: 0
-            scale: 1 + Math.sin(root.pulsePhase) * (0.015 + root.heat * 0.045)
+            scale: (0.25 + 0.75 * Math.min(1, root.ignition)) * (1 + Math.sin(root.pulsePhase) * (0.015 + root.heat * 0.045))
 
             Canvas {
                 id: sun
@@ -290,7 +310,8 @@ Item {
         }
 
         ReadinessRing {
-            width: Math.min(292, chamber.width * 0.43)
+            opacity: Math.max(0, Math.min(1, root.ignition))
+            width: Math.min(chamber.width * 0.43, Math.max(292, chamber.width * 0.33))
             height: width
             anchors.centerIn: parent
             z: 0.5
@@ -298,7 +319,8 @@ Item {
             source: root.readinessSource
         }
         ReadinessRing {
-            width: Math.min(292, chamber.width * 0.43)
+            opacity: Math.max(0, Math.min(1, root.ignition))
+            width: Math.min(chamber.width * 0.43, Math.max(292, chamber.width * 0.33))
             height: width
             anchors.centerIn: parent
             z: 3
@@ -317,8 +339,8 @@ Item {
                 width: 5 + index
                 height: width
                 radius: width / 2
-                x: root.orbitX(angle, chamber.width * 0.24) - width / 2
-                y: root.orbitY(angle, chamber.width * 0.24) - height / 2
+                x: root.orbitX(angle, chamber.width * 0.24 * root.ignition) - width / 2
+                y: root.orbitY(angle, chamber.width * 0.24 * root.ignition) - height / 2
                 z: Math.sin(angle) < 0 ? -1 : 1
                 scale: 0.85 + Math.sin(angle) * 0.15
                 color: root.theme.secondaryAccentColor
@@ -335,7 +357,7 @@ Item {
                 readonly property real angle: root.planetAngle(index, root.corePhase)
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
-                width: Math.max(root.docked ? 34 : 44, chamber.width * 0.078)
+                width: Math.min(88, Math.max(root.docked ? 34 : 44, chamber.width * 0.078))
                 height: width
                 x: root.orbitX(angle, orbitRadius) - width / 2
                 y: root.orbitY(angle, orbitRadius) - height / 2

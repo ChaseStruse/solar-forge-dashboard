@@ -66,7 +66,8 @@ FocusScope {
                     c.strokeStyle = ink; c.lineWidth = 1;
                     for (var r of [0.23, 0.36, 0.49]) {
                         c.beginPath();
-                        c.ellipse(width/2, height/2, width*r, height*r*0.58, 0, 0, Math.PI*2);
+                        // Qt's ellipse() takes a bounding box, not centre + radii.
+                        c.ellipse(width/2 - width*r, height/2 - height*r*0.58, width*r*2, height*r*0.58*2);
                         c.globalAlpha = 0.13; c.stroke();
                     }
                     c.beginPath(); c.moveTo(width/2-18, height/2); c.lineTo(width/2+18, height/2);
