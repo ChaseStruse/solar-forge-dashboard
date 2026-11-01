@@ -16,11 +16,15 @@ Item {
     property real glitch: 0
     property bool shortcutConfigured: false
     property string shortcutStatus: "SHORTCUT STATUS UNKNOWN"
+    // First Escape at the idle core arms shutdown; a second one disengages.
+    property bool escArmed: false
+    readonly property int moduleCount: core.modules.length
 
     function open() {
         todos.load();
         opened = true;
         activeModule = -1;
+        escArmed = false;
         github.refresh();
         missionSource.refresh();
         flightModes.refresh();
@@ -31,6 +35,11 @@ Item {
             shortcutStatusProcess.running = true;
         themeReactor.refresh();
         readiness.refresh();
+        commsSource.refresh();
+        reactorSource.refresh();
+        // Mirror checks are slower; refresh the depot at most every 15 minutes.
+        if (Date.now() - depotSource.refreshedAt > 15 * 60000)
+            depotSource.refresh();
         fullscreenDelay.restart();
         if (!hostProcess.running && !hostLine)
             hostProcess.running = true;
@@ -42,7 +51,7 @@ Item {
         } else {
             core.ignite();
         }
-        syslog.log("SYS", "command center online  ·  press : for commands", "ok");
+        syslog.log("SYS", "command center online  ·  press : for commands, space to launch", "ok");
         Qt.callLater(function () {
             if (root.opened)
                 core.focusPicker();
@@ -50,41 +59,51 @@ Item {
     }
 
     function selectModule(module) {
-        if (module >= 0 && module <= 5)
+        if (module >= 0 && module < moduleCount)
             activeModule = module;
     }
 
     function toggleModule(module) {
-        if (module >= 0 && module <= 5)
+        if (module >= 0 && module < moduleCount)
             activeModule = activeModule === module ? -1 : module;
     }
 
     function openModule(module) {
-        if (module < 0 || module > 5)
+        if (module < 0 || module >= moduleCount)
             return;
         selectModule(module);
         if (module === 0)
             tasks.focusInput();
         else if (module === 1)
             projects.forceActiveFocus();
-        else if (module === 3)
-            flightModePanel.focusControls();
-        else if (module === 4)
-            workspaceRadar.forceActiveFocus();
-        else if (module === 5)
-            themeReactorPanel.focusControls();
+        else
+            [launcher, reactorPanel, commsPanel, depotPanel, codexPanel][module - 2].focusControls();
     }
 
     // The bar derives its open state from this property. Closing never calls
     // back into shell.hide(), so all close paths are idempotent.
     function close() {
         opened = false;
+        escArmed = false;
         workspaceRadarSource.stopListening();
     }
 
     function releaseFocus() {
         activeModule = -1;
         core.focusPicker();
+    }
+
+    // CRT power-off, then close.
+    function shutdown() {
+        if (shutdownAnim.running || !opened)
+            return;
+        sfx("service-logout");
+        shutdownAnim.restart();
+    }
+
+    function sfx(name) {
+        if (settings.sfx)
+            Quickshell.execDetached(["canberra-gtk-play", "-i", name]);
     }
 
     function toggleShortcut() {
@@ -130,10 +149,46 @@ Item {
     SystemBriefingSource {
         id: systemSource
     }
+    ScriptSource {
+        id: reactorSource
+        script: "reactor-state.sh"
+        onActionFinished: function(label, ok, output) { syslog.log("REACTOR", label + (ok ? "  ·  done" : "  ·  failed " + output), ok ? "ok" : "warn"); }
+    }
+    ScriptSource {
+        id: commsSource
+        script: "comms-state.sh"
+        onActionFinished: function(label, ok, output) {
+            syslog.log("COMMS", label + (ok ? "  ·  done" : "  ·  failed " + output), ok ? "ok" : "warn");
+            root.sfx(ok ? "network-connectivity-established" : "dialog-warning");
+        }
+    }
+    ScriptSource {
+        id: depotSource
+        script: "depot-state.sh"
+        timeoutMs: 45000
+    }
+    ScriptSource {
+        id: codexSource
+        script: "codex-state.sh"
+    }
     SystemClock {
         id: clock
         precision: SystemClock.Seconds
     }
+
+    // Persistent preferences (sound effects) under XDG state.
+    readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/solar-forge"
+    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", stateDir])
+    FileView {
+        path: root.stateDir + "/settings.json"
+        printErrors: false
+        onAdapterUpdated: writeAdapter()
+        JsonAdapter {
+            id: settings
+            property bool sfx: false
+        }
+    }
+
     Timer {
         interval: 2500
         repeat: true
@@ -153,12 +208,24 @@ Item {
         running: root.opened
         onTriggered: readiness.refresh()
     }
+    // Module sources poll only while their panel is on screen.
+    Timer {
+        interval: 5000
+        repeat: true
+        running: root.opened && (root.activeModule === 3 || root.activeModule === 4)
+        onTriggered: root.activeModule === 3 ? reactorSource.refresh() : commsSource.refresh()
+    }
     Timer {
         interval: 12000
         repeat: true
         running: root.opened
         onTriggered: syslog.log("CORE", "flux " + Math.max(0, readiness.cpuPercent) + "%  ·  lattice "
             + Math.max(0, readiness.memoryPercent) + "%  ·  heat " + Math.round(core.heat * 100) + "%", "echo")
+    }
+    Timer {
+        id: escDisarm
+        interval: 1800
+        onTriggered: root.escArmed = false
     }
 
     // Hyprland fullscreen once the window is mapped.
@@ -183,142 +250,36 @@ Item {
             }
         }
     }
-
-    SequentialAnimation {
-        id: glitchAnim
-        NumberAnimation { target: root; property: "glitch"; to: 1; duration: 40 }
-        NumberAnimation { target: root; property: "glitch"; to: 0.3; duration: 60 }
-        NumberAnimation { target: root; property: "glitch"; to: 0.9; duration: 40 }
-        NumberAnimation { target: root; property: "glitch"; to: 0; duration: 180 }
-    }
-    function pulseGlitch() {
-        glitchAnim.restart();
-    }
-
-    readonly property var moduleAliases: ({
-        "t": 0, "tasks": 0, "todo": 0, "objectives": 0, "obj": 0,
-        "g": 1, "github": 1, "gh": 1, "git": 1,
-        "m": 2, "mission": 2, "timeline": 2, "log": 2,
-        "f": 3, "flight": 3, "modes": 3,
-        "w": 4, "radar": 4, "workspace": 4, "workspaces": 4,
-        "r": 5, "reactor": 5
-    })
-
-    function runCommand(raw) {
-        var text = String(raw || "").trim();
-        var words = text.split(/\s+/);
-        var verb = words[0].toLowerCase();
-        var rest = text.substring(words[0].length).trim();
-        syslog.log("CMD", text, "cmd");
-        if (verb === "help" || verb === "?") {
-            [
-                "open <module> · t g m f w r     jump to a module",
-                "close                           return to the core",
-                "todo <text>                     queue an objective",
-                "theme <name>  ·  themes         engage / list themes",
-                "mode <focus|forge|drift|broadcast>  set flight mode",
-                "status · refresh · boot          telemetry, resync, replay ignition",
-                "shortcut                        toggle SUPER + ALT + D",
-                "clear · exit                    wipe log, close the forge"
-            ].forEach(function(line) { syslog.log("HELP", line, "echo"); });
-        } else if (verb === "open" || moduleAliases[verb] !== undefined && !rest) {
-            var key = verb === "open" ? rest.toLowerCase() : verb;
-            if (moduleAliases[key] === undefined)
-                return syslog.log("ERR", "unknown module '" + key + "'", "warn");
-            openModule(moduleAliases[key]);
-            commandLine.focusInput();
-        } else if (verb === "close" || verb === "core") {
-            activeModule = -1;
-        } else if (verb === "todo" || verb === "add") {
-            if (!rest)
-                return syslog.log("ERR", "usage: todo <text>", "warn");
-            syslog.log("OBJ", todos.add(rest) ? "queued: " + rest : "could not queue objective", todos.error ? "warn" : "ok");
-        } else if (verb === "themes") {
-            syslog.log("REACT", themeReactor.themes.map(function(t) { return t.name; }).join("  ·  ") || "no themes scanned", "echo");
-        } else if (verb === "theme") {
-            var needle = rest.toLowerCase();
-            var match = themeReactor.themes.filter(function(t) { return String(t.name).toLowerCase() === needle; })[0]
-                || themeReactor.themes.filter(function(t) { return String(t.name).toLowerCase().indexOf(needle) >= 0; })[0];
-            if (!needle || !match)
-                return syslog.log("ERR", needle ? "no theme matches '" + rest + "'" : "usage: theme <name>", "warn");
-            syslog.log("REACT", themeReactor.applyTheme(match.name) ? "engaging " + match.name + "…" : "reactor busy", "info");
-        } else if (verb === "mode") {
-            var mode = flightModes.modeById(rest.toLowerCase());
-            if (!mode)
-                return syslog.log("ERR", "modes: " + flightModes.modes.map(function(m) { return m.id; }).join(" · "), "warn");
-            syslog.log("FLIGHT", flightModes.apply(mode.id) ? "engaging " + mode.name + " mode…" : "flight controller busy", "info");
-        } else if (verb === "status") {
-            readiness.metrics.forEach(function(m) {
-                syslog.log("STAT", m.label + "  " + m.value, m.warning ? "warn" : "echo");
-            });
-            syslog.log("STAT", "forge " + core.forgeState + "  ·  heat " + Math.round(core.heat * 100) + "%", "info");
-        } else if (verb === "refresh" || verb === "sync") {
-            github.refresh(); missionSource.refresh(); readiness.refresh(); reminders.refresh();
-            themeReactor.refresh(); flightModes.refresh(); workspaceRadarSource.refresh();
-            syslog.log("SYS", "resync requested across all satellites", "info");
-        } else if (verb === "boot" || verb === "brief") {
-            systemSource.refresh();
-            core.ignition = 0;
-            bootSequence.play();
-        } else if (verb === "shortcut") {
-            toggleShortcut();
-            syslog.log("SYS", root.shortcutStatus, "info");
-        } else if (verb === "clear" || verb === "cls") {
-            syslog.clear();
-        } else if (verb === "exit" || verb === "quit") {
-            close();
-        } else {
-            syslog.log("ERR", "unknown command '" + verb + "' — type help", "warn");
+    // One-shot system commands launched from the command line.
+    Process {
+        id: systemAction
+        property string label: ""
+        stdout: StdioCollector { id: systemActionOut; waitForEnd: true }
+        stderr: StdioCollector { id: systemActionErr; waitForEnd: true }
+        onExited: function(code) {
+            var detail = String(systemActionOut.text || systemActionErr.text || "").trim().split("\n").pop();
+            syslog.log("SYS", label + (code === 0 ? "  ·  done" : "  ·  failed") + (detail ? "  ·  " + detail : ""), code === 0 ? "ok" : "warn");
         }
     }
-
-    Connections {
-        target: readiness
-        function onWarningCountChanged() {
-            syslog.log("ALERT", readiness.warningCount
-                ? readiness.warningCount + " subsystem warning" + (readiness.warningCount > 1 ? "s" : "") + " active"
-                : "all subsystems nominal", readiness.warningCount ? "warn" : "ok");
-        }
+    function system(argv, label) {
+        if (systemAction.running)
+            return syslog.log("SYS", "previous command still running", "warn");
+        systemAction.label = label;
+        systemAction.command = argv;
+        systemAction.running = true;
+        syslog.log("SYS", label + "…", "info");
     }
-    Connections {
-        target: core
-        function onForgeStateChanged() {
-            syslog.log("CORE", "forge " + core.forgeState.toLowerCase() + "  ·  heat " + Math.round(core.heat * 100) + "%",
-                       core.forgeState === "STABLE" ? "ok" : "warn");
-        }
+    // Commands that need the dashboard out of the way (screenshots, lock).
+    Timer {
+        id: afterClose
+        property var argv: []
+        interval: 450
+        onTriggered: Quickshell.execDetached(argv)
     }
-    Connections {
-        target: github
-        function onRefreshedAtChanged() {
-            if (github.refreshedAt)
-                syslog.log("GH", github.actionableCount + " actionable  ·  " + github.repositories.length + " repositories", github.actionableCount ? "warn" : "ok");
-        }
-    }
-    Connections {
-        target: themeReactor
-        function onCurrentThemeChanged() {
-            syslog.log("REACT", "stellar identity → " + themeReactor.currentTheme, "ok");
-            root.pulseGlitch();
-        }
-    }
-    Connections {
-        target: flightModes
-        function onActiveModeChanged() {
-            if (flightModes.activeMode)
-                syslog.log("FLIGHT", flightModes.activeMode + " mode engaged", "ok");
-        }
-    }
-    Connections {
-        target: todos
-        function onRemainingChanged() {
-            syslog.log("OBJ", todos.remaining + " objective" + (todos.remaining === 1 ? "" : "s") + " in queue", "echo");
-        }
-    }
-    onActiveModuleChanged: {
-        if (activeModule >= 0) {
-            syslog.log("NAV", "SF-0" + (activeModule + 1) + " " + core.modules[activeModule].name.toLowerCase() + " online", "info");
-            pulseGlitch();
-        }
+    function closeThen(argv) {
+        afterClose.argv = argv;
+        close();
+        afterClose.restart();
     }
 
     Process {
@@ -346,6 +307,287 @@ Item {
         onTriggered: if (!shortcutStatusProcess.running) shortcutStatusProcess.running = true
     }
 
+    SequentialAnimation {
+        id: glitchAnim
+        NumberAnimation { target: root; property: "glitch"; to: 1; duration: 40 }
+        NumberAnimation { target: root; property: "glitch"; to: 0.3; duration: 60 }
+        NumberAnimation { target: root; property: "glitch"; to: 0.9; duration: 40 }
+        NumberAnimation { target: root; property: "glitch"; to: 0; duration: 180 }
+    }
+    function pulseGlitch() {
+        glitchAnim.restart();
+    }
+
+    // Planet telemetry -------------------------------------------------------
+    readonly property int depotPending: depotSource.data
+        ? (depotSource.data.repo || []).length + (depotSource.data.aur || []).length + (depotSource.data.omarchyReady ? 1 : 0) : 0
+    readonly property real hottestTemp: {
+        var max = readiness.gpuTemperature;
+        var readings = reactorSource.data ? reactorSource.data.readings || [] : [];
+        for (var i = 0; i < readings.length; i++)
+            if (readings[i].kind === "temp") max = Math.max(max, readings[i].value);
+        return max;
+    }
+    readonly property var activeNetwork: commsSource.data
+        ? (commsSource.data.networks || []).filter(function(n) { return n.active; })[0] || null : null
+    function badge(count) {
+        return count > 99 ? "99+" : count > 0 ? String(count) : "";
+    }
+
+    readonly property var moduleAliases: ({
+        "t": 0, "tasks": 0, "todo": 0, "objectives": 0, "obj": 0,
+        "g": 1, "github": 1, "gh": 1, "git": 1,
+        "l": 2, "launch": 2, "launcher": 2, "apps": 2, "hangar": 2,
+        "r": 3, "reactor": 3, "thermal": 3, "power": 3,
+        "c": 4, "comms": 4, "network": 4, "wifi": 4, "audio": 4,
+        "d": 5, "depot": 5, "updates": 5,
+        "k": 6, "codex": 6, "keybinds": 6, "bindings": 6
+    })
+    readonly property var commandSpecs: [
+        { name: "help", args: "", hint: "list commands" },
+        { name: "open", args: "<module>", hint: "jump to a module" },
+        { name: "run", args: "<app>", hint: "launch an application" },
+        { name: "close", args: "", hint: "return to the core" },
+        { name: "todo", args: "<text>", hint: "queue an objective" },
+        { name: "focus", args: "<minutes>", hint: "focus mode + reminder" },
+        { name: "keys", args: "<search>", hint: "search keybindings" },
+        { name: "update", args: "", hint: "full system update" },
+        { name: "lock", args: "", hint: "lock the screen" },
+        { name: "screenshot", args: "[region|windows|fullscreen]", hint: "capture the screen" },
+        { name: "wallpaper", args: "next", hint: "cycle the background" },
+        { name: "nightlight", args: "", hint: "toggle nightlight" },
+        { name: "theme", args: "<name>", hint: "engage a theme" },
+        { name: "themes", args: "", hint: "list themes" },
+        { name: "mode", args: "<flight mode>", hint: "engage a flight mode" },
+        { name: "profile", args: "<power profile>", hint: "set power profile" },
+        { name: "wifi", args: "<on|off>", hint: "wi-fi radio" },
+        { name: "bt", args: "<on|off|toggle>", hint: "bluetooth power" },
+        { name: "volume", args: "<+N|-N|mute-toggle>", hint: "output volume" },
+        { name: "status", args: "", hint: "print telemetry" },
+        { name: "refresh", args: "", hint: "resync every source" },
+        { name: "boot", args: "", hint: "replay ignition" },
+        { name: "sfx", args: "<on|off>", hint: "sound effects" },
+        { name: "shortcut", args: "", hint: "toggle SUPER + ALT + D" },
+        { name: "clear", args: "", hint: "wipe the syslog" },
+        { name: "exit", args: "", hint: "close the forge" }
+    ]
+
+    // Tab-completion candidates for the command line.
+    function complete(text) {
+        var raw = String(text || "");
+        var space = raw.indexOf(" ");
+        if (space < 0) {
+            var q = raw.toLowerCase();
+            return commandSpecs.filter(function(c) { return c.name.indexOf(q) === 0; }).slice(0, 8).map(function(c) {
+                return { value: c.name + (c.args ? " " : ""), label: c.name + (c.args ? " " + c.args : ""), hint: c.hint };
+            });
+        }
+        var verb = raw.substring(0, space).toLowerCase();
+        var arg = raw.substring(space + 1).toLowerCase();
+        var options = [];
+        if (verb === "open")
+            options = ["objectives", "github", "launcher", "reactor", "comms", "depot", "codex"];
+        else if (verb === "run" || verb === "launch")
+            options = launcher.matchNames(arg, 8);
+        else if (verb === "theme")
+            options = themeReactor.themes.map(function(t) { return String(t.name); });
+        else if (verb === "mode")
+            options = flightModes.modes.map(function(m) { return m.id; });
+        else if (verb === "profile")
+            options = reactorSource.data ? reactorSource.data.profiles || [] : ["power-saver", "balanced", "performance"];
+        else if (verb === "screenshot")
+            options = ["region", "windows", "fullscreen", "smart"];
+        else if (verb === "wifi" || verb === "sfx")
+            options = ["on", "off"];
+        else if (verb === "bt")
+            options = ["on", "off", "toggle"];
+        else if (verb === "volume")
+            options = ["+5", "-5", "mute-toggle"];
+        else if (verb === "wallpaper")
+            options = ["next"];
+        else if (verb === "focus")
+            options = ["25", "50", "90"];
+        return options.filter(function(o) {
+            return verb === "run" || verb === "launch" || String(o).toLowerCase().indexOf(arg) === 0;
+        }).slice(0, 8).map(function(o) {
+            return { value: verb + " " + o, label: verb + " " + o, hint: "" };
+        });
+    }
+
+    function runCommand(raw) {
+        var text = String(raw || "").trim();
+        var words = text.split(/\s+/);
+        var verb = words[0].toLowerCase();
+        var rest = text.substring(words[0].length).trim();
+        var arg = rest.toLowerCase();
+        syslog.log("CMD", text, "cmd");
+        sfx("message");
+        if (verb === "help" || verb === "?") {
+            commandSpecs.forEach(function(c) {
+                syslog.log("HELP", (c.name + (c.args ? " " + c.args : "")) + "  —  " + c.hint, "echo");
+            });
+            syslog.log("HELP", "tab completes · ↑↓ history · space at the core opens the launcher", "echo");
+        } else if (verb === "open" || moduleAliases[verb] !== undefined && !rest) {
+            var key = verb === "open" ? arg : verb;
+            if (moduleAliases[key] === undefined)
+                return syslog.log("ERR", "unknown module '" + key + "'", "warn");
+            openModule(moduleAliases[key]);
+        } else if (verb === "run" || verb === "launch") {
+            if (!rest)
+                return openModule(2);
+            if (!launcher.launchQuery(rest))
+                syslog.log("ERR", "no application matches '" + rest + "'", "warn");
+        } else if (verb === "close" || verb === "core") {
+            releaseFocus();
+        } else if (verb === "todo" || verb === "add") {
+            if (!rest)
+                return syslog.log("ERR", "usage: todo <text>", "warn");
+            syslog.log("OBJ", todos.add(rest) ? "queued: " + rest : "could not queue objective", todos.error ? "warn" : "ok");
+        } else if (verb === "focus") {
+            var minutes = Math.floor(Number(arg || 25));
+            if (!isFinite(minutes) || minutes <= 0 || minutes > 600)
+                return syslog.log("ERR", "usage: focus <minutes>", "warn");
+            flightModes.apply("focus");
+            Quickshell.execDetached(["omarchy", "reminder", String(minutes), "☀ Focus session complete — " + minutes + " minutes logged"]);
+            syslog.log("FOCUS", minutes + " minute session started  ·  focus mode engaging  ·  reminder armed", "ok");
+        } else if (verb === "keys") {
+            openModule(6);
+            codexPanel.search(rest);
+        } else if (verb === "update") {
+            depotPanel.launchUpdate();
+        } else if (verb === "lock") {
+            closeThen(["omarchy", "system", "lock"]);
+        } else if (verb === "screenshot") {
+            var shot = ["region", "windows", "fullscreen", "smart"].indexOf(arg) >= 0 ? arg : "region";
+            closeThen(["omarchy", "capture", "screenshot", shot]);
+        } else if (verb === "wallpaper" || verb === "bg") {
+            system(["omarchy", "theme", "bg", "next"], "wallpaper cycle");
+        } else if (verb === "nightlight") {
+            system(["omarchy", "toggle", "nightlight"], "nightlight toggle");
+        } else if (verb === "themes") {
+            syslog.log("REACT", themeReactor.themes.map(function(t) { return t.name; }).join("  ·  ") || "no themes scanned", "echo");
+        } else if (verb === "theme") {
+            var match = themeReactor.themes.filter(function(t) { return String(t.name).toLowerCase() === arg; })[0]
+                || themeReactor.themes.filter(function(t) { return String(t.name).toLowerCase().indexOf(arg) >= 0; })[0];
+            if (!arg || !match)
+                return syslog.log("ERR", arg ? "no theme matches '" + rest + "'" : "usage: theme <name>", "warn");
+            syslog.log("REACT", themeReactor.applyTheme(match.name) ? "engaging " + match.name + "…" : "reactor busy", "info");
+        } else if (verb === "mode") {
+            var mode = flightModes.modeById(arg);
+            if (!mode)
+                return syslog.log("ERR", "modes: " + flightModes.modes.map(function(m) { return m.id; }).join(" · "), "warn");
+            syslog.log("FLIGHT", flightModes.apply(mode.id) ? "engaging " + mode.name + " mode…" : "flight controller busy", "info");
+        } else if (verb === "profile") {
+            if (!/^(power-saver|balanced|performance)$/.test(arg))
+                return syslog.log("ERR", "usage: profile <power-saver|balanced|performance>", "warn");
+            reactorSource.run(["powerprofilesctl", "set", arg], "power profile → " + arg);
+        } else if (verb === "wifi") {
+            if (arg !== "on" && arg !== "off")
+                return syslog.log("ERR", "usage: wifi <on|off>", "warn");
+            commsSource.run(["nmcli", "radio", "wifi", arg], "wi-fi radio " + arg);
+        } else if (verb === "bt" || verb === "bluetooth") {
+            if (["on", "off", "toggle"].indexOf(arg) < 0)
+                return syslog.log("ERR", "usage: bt <on|off|toggle>", "warn");
+            commsSource.run(["omarchy", "bluetooth", "power", arg], "bluetooth " + arg);
+        } else if (verb === "volume" || verb === "vol") {
+            if (!/^([+-]\d{1,3}|mute-toggle|mute|raise|lower)$/.test(arg))
+                return syslog.log("ERR", "usage: volume <+N|-N|mute-toggle>", "warn");
+            system(["omarchy", "audio", "output", "volume", arg === "mute" ? "mute-toggle" : arg], "volume " + arg);
+        } else if (verb === "status") {
+            readiness.metrics.forEach(function(m) {
+                syslog.log("STAT", m.label + "  " + m.value, m.warning ? "warn" : "echo");
+            });
+            syslog.log("STAT", "forge " + core.forgeState + "  ·  heat " + Math.round(core.heat * 100) + "%  ·  peak " + Math.round(hottestTemp) + "°C", "info");
+        } else if (verb === "refresh" || verb === "sync") {
+            github.refresh(); missionSource.refresh(); readiness.refresh(); reminders.refresh();
+            themeReactor.refresh(); flightModes.refresh(); workspaceRadarSource.refresh();
+            reactorSource.refresh(); commsSource.refresh(); depotSource.refresh(); codexSource.refresh();
+            syslog.log("SYS", "resync requested across all satellites", "info");
+        } else if (verb === "boot" || verb === "brief") {
+            systemSource.refresh();
+            core.ignition = 0;
+            bootSequence.play();
+        } else if (verb === "sfx") {
+            if (arg !== "on" && arg !== "off")
+                return syslog.log("SYS", "sound effects are " + (settings.sfx ? "on" : "off") + "  ·  usage: sfx <on|off>", "echo");
+            settings.sfx = arg === "on";
+            sfx("bell");
+            syslog.log("SYS", "sound effects " + arg, "ok");
+        } else if (verb === "shortcut") {
+            toggleShortcut();
+            syslog.log("SYS", root.shortcutStatus, "info");
+        } else if (verb === "clear" || verb === "cls") {
+            syslog.clear();
+        } else if (verb === "exit" || verb === "quit") {
+            shutdown();
+        } else {
+            syslog.log("ERR", "unknown command '" + verb + "' — type help", "warn");
+            sfx("dialog-error");
+        }
+    }
+
+    Connections {
+        target: readiness
+        function onWarningCountChanged() {
+            syslog.log("ALERT", readiness.warningCount
+                ? readiness.warningCount + " subsystem warning" + (readiness.warningCount > 1 ? "s" : "") + " active"
+                : "all subsystems nominal", readiness.warningCount ? "warn" : "ok");
+            if (readiness.warningCount)
+                root.sfx("dialog-warning");
+        }
+    }
+    Connections {
+        target: core
+        function onForgeStateChanged() {
+            syslog.log("CORE", "forge " + core.forgeState.toLowerCase() + "  ·  heat " + Math.round(core.heat * 100) + "%",
+                       core.forgeState === "STABLE" ? "ok" : "warn");
+        }
+    }
+    Connections {
+        target: github
+        function onRefreshedAtChanged() {
+            if (github.refreshedAt)
+                syslog.log("GH", github.actionableCount + " actionable  ·  " + github.repositories.length + " repositories", github.actionableCount ? "warn" : "ok");
+        }
+    }
+    Connections {
+        target: depotSource
+        function onRefreshedAtChanged() {
+            syslog.log("DEPOT", root.depotPending ? root.depotPending + " updates waiting  ·  type update" : "all packages current",
+                       root.depotPending ? "warn" : "ok");
+        }
+    }
+    Connections {
+        target: themeReactor
+        function onCurrentThemeChanged() {
+            syslog.log("REACT", "stellar identity → " + themeReactor.currentTheme, "ok");
+            root.pulseGlitch();
+        }
+    }
+    Connections {
+        target: flightModes
+        function onActiveModeChanged() {
+            if (flightModes.activeMode)
+                syslog.log("FLIGHT", flightModes.activeMode + " mode engaged", "ok");
+        }
+    }
+    Connections {
+        target: todos
+        function onRemainingChanged() {
+            syslog.log("OBJ", todos.remaining + " objective" + (todos.remaining === 1 ? "" : "s") + " in queue", "echo");
+        }
+    }
+    onActiveModuleChanged: {
+        if (activeModule < 0)
+            return;
+        syslog.log("NAV", "SF-0" + (activeModule + 1) + " " + core.modules[activeModule].name.toLowerCase() + " online", "info");
+        sfx("dialog-information");
+        pulseGlitch();
+        if (activeModule === 3) reactorSource.refresh();
+        else if (activeModule === 4) commsSource.refresh();
+        else if (activeModule === 6 && !codexSource.data) codexSource.refresh();
+    }
+
     FloatingWindow {
         id: window
         visible: root.opened
@@ -361,7 +603,21 @@ Item {
             id: screen
             anchors.fill: parent
             focus: true
-            Keys.onEscapePressed: root.releaseFocus()
+            transform: Scale {
+                id: crt
+                origin.x: screen.width / 2
+                origin.y: screen.height / 2
+            }
+            Keys.onEscapePressed: {
+                if (root.activeModule >= 0) {
+                    root.releaseFocus();
+                } else if (root.escArmed) {
+                    root.shutdown();
+                } else {
+                    root.escArmed = true;
+                    escDisarm.restart();
+                }
+            }
             Keys.onPressed: function(event) {
                 if (event.text === ":" || event.text === "/") {
                     commandLine.focusInput();
@@ -447,13 +703,14 @@ Item {
                     }
                 }
 
-                // Forge state chip
+                // Forge state chip; doubles as the shutdown confirmation.
                 Rectangle {
                     anchors.centerIn: parent
+                    readonly property color tone: root.escArmed || core.forgeState !== "STABLE" ? dashboardTheme.urgentColor : dashboardTheme.accentColor
                     width: stateRow.implicitWidth + 32
                     height: 34
-                    color: Util.alpha(core.forgeState === "STABLE" ? dashboardTheme.accentColor : dashboardTheme.urgentColor, 0.1)
-                    border.color: core.forgeState === "STABLE" ? dashboardTheme.accentColor : dashboardTheme.urgentColor
+                    color: Util.alpha(tone, 0.1)
+                    border.color: tone
                     Row {
                         id: stateRow
                         anchors.centerIn: parent
@@ -461,18 +718,19 @@ Item {
                         Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             width: 8; height: 8
-                            color: core.forgeState === "STABLE" ? dashboardTheme.accentColor : dashboardTheme.urgentColor
+                            color: parent.parent.tone
                             SequentialAnimation on opacity {
                                 loops: Animation.Infinite
                                 running: root.opened
-                                NumberAnimation { to: 0.2; duration: 600 }
-                                NumberAnimation { to: 1; duration: 600 }
+                                NumberAnimation { to: 0.2; duration: root.escArmed ? 150 : 600 }
+                                NumberAnimation { to: 1; duration: root.escArmed ? 150 : 600 }
                             }
                         }
                         DecodeText {
                             anchors.verticalCenter: parent.verticalCenter
-                            source: "FORGE " + core.forgeState + "  ·  HEAT " + Math.round(core.heat * 100) + "%"
-                            color: core.forgeState === "STABLE" ? dashboardTheme.accentColor : dashboardTheme.urgentColor
+                            source: root.escArmed ? "PRESS ESC AGAIN TO DISENGAGE"
+                                : "FORGE " + core.forgeState + "  ·  HEAT " + Math.round(core.heat * 100) + "%"
+                            color: parent.parent.tone
                             font.family: Style.font.menuFamily
                             font.pixelSize: dashboardTheme.fontSmall
                             font.bold: true
@@ -484,7 +742,7 @@ Item {
                 Column {
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
-                    spacing: 0
+                    spacing: 1
                     Text {
                         anchors.right: parent.right
                         text: Qt.formatTime(clock.date, "HH:mm") + "<font color='" + dashboardTheme.accentColor + "'>:" + Qt.formatTime(clock.date, "ss") + "</font>"
@@ -498,6 +756,9 @@ Item {
                     Text {
                         anchors.right: parent.right
                         text: Qt.formatDate(clock.date, "dddd · d MMMM yyyy").toUpperCase()
+                            + (missionSource.weatherCondition !== "—"
+                               ? "   //   " + (missionSource.weatherCondition + " · " + missionSource.weatherValue).toUpperCase()
+                               : "")
                         color: dashboardTheme.dimmedTextColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: dashboardTheme.fontMicro
@@ -539,12 +800,8 @@ Item {
                 readonly property real stageWidth: width - stageX - (wide ? railWidth + gap : 0)
                 readonly property bool docked: root.activeModule >= 0 && width >= 780
                 readonly property real dockWidth: wide ? railWidth : Math.min(300, width * 0.28)
-                readonly property var activePanel: root.activeModule === 0 ? tasks
-                    : root.activeModule === 1 ? projects
-                    : root.activeModule === 2 ? missionLog
-                    : root.activeModule === 3 ? flightModePanel
-                    : root.activeModule === 4 ? workspaceRadar
-                    : root.activeModule === 5 ? themeReactorPanel : null
+                readonly property var panelList: [tasks, projects, launcher, reactorPanel, commsPanel, depotPanel, codexPanel]
+                readonly property var activePanel: root.activeModule >= 0 ? panelList[root.activeModule] || null : null
 
                 TelemetryRail {
                     x: body.docked ? -width - body.gap : 0
@@ -586,13 +843,31 @@ Item {
                     docked: body.docked
                     animating: root.opened && visible
                     visible: root.activeModule < 0 || body.docked
+                    planetStates: [
+                        { badge: root.badge(todos.remaining), alert: false,
+                          progress: todos.totalCount ? todos.closedCount / todos.totalCount : -1,
+                          detail: todos.remaining + " active · " + todos.closedCount + " closed" },
+                        { badge: root.badge(github.actionableCount),
+                          alert: github.actionItems.some(function(i) { return i.tone === "urgent"; }),
+                          progress: -1, detail: github.actionableCount ? github.actionableCount + " need attention" : "inbox clear" },
+                        { badge: "", alert: launcher.windows.some(function(w) { return w.urgent; }),
+                          progress: -1, detail: launcher.windows.length + " windows in flight" },
+                        { badge: "", alert: root.hottestTemp >= 85, progress: core.heat,
+                          detail: root.hottestTemp >= 0 ? "peak " + Math.round(root.hottestTemp) + "°C" : "" },
+                        { badge: "", alert: !readiness.networkOnline,
+                          progress: root.activeNetwork ? root.activeNetwork.signal / 100 : -1,
+                          detail: root.activeNetwork ? root.activeNetwork.ssid + " · " + root.activeNetwork.signal + "%" : "uplink offline" },
+                        { badge: root.badge(root.depotPending), alert: false, progress: -1,
+                          detail: root.depotPending ? root.depotPending + " updates waiting" : "all current" },
+                        { badge: "", alert: false, progress: -1, detail: "searchable keybindings" }
+                    ]
                     onModuleSelected: function(module) { root.toggleModule(module); }
                     onModuleNavigated: function(module) { root.selectModule(module); }
                     onModuleOpened: function(module) { root.openModule(module); }
                 }
 
                 // Energy conduit routed from the selected planet into the
-                // open module, with a pulse travelling along it.
+                // open module, with pulses travelling along it.
                 Shape {
                     id: conduit
                     anchors.fill: parent
@@ -659,7 +934,6 @@ Item {
                     x: body.docked ? body.dockWidth + body.gap : 0
                     width: (body.wide ? body.width - body.railWidth - body.gap : body.width) - x
                     height: body.height
-                    transformOrigin: Item.Top
 
                     // CRT power-on: collapse to a scanline, then expand.
                     Connections {
@@ -671,7 +945,7 @@ Item {
                     }
                     SequentialAnimation {
                         id: powerOn
-                        ScriptAction { script: { panelHost.scale = 1; panelContent.opacity = 0; panelHost.yScale = 0.01; } }
+                        ScriptAction { script: { panelContent.opacity = 0; panelHost.yScale = 0.01; } }
                         NumberAnimation { target: panelHost; property: "yScale"; to: 1; duration: 280; easing.type: Easing.OutCubic }
                         NumberAnimation { target: panelContent; property: "opacity"; to: 1; duration: 60 }
                         NumberAnimation { target: panelContent; property: "opacity"; to: 0.25; duration: 50 }
@@ -717,47 +991,65 @@ Item {
                             visible: root.activeModule === 1
                             onDismissRequested: root.releaseFocus()
                         }
-                        MissionTimeline {
-                            id: missionLog
+                        LauncherSection {
+                            id: launcher
                             width: panelContent.width
                             theme: dashboardTheme
-                            source: missionSource
-                            taskStore: todos
-                            reminderSource: reminders
+                            radar: workspaceRadarSource
+                            availableHeight: panelContent.height
                             selected: root.activeModule === 2
                             visible: root.activeModule === 2
                             onDismissRequested: root.releaseFocus()
-                            onReplayBriefing: {
-                                systemSource.refresh();
-                                core.ignition = 0;
-                                bootSequence.play();
+                            onLaunched: function(name) { launchFx.fire(name); }
+                            onWindowFocused: function(title) {
+                                syslog.log("HANGAR", "focus → " + title, "ok");
+                                root.close();
                             }
+                            onWindowClosed: function(title) { syslog.log("HANGAR", "closed " + title, "warn"); }
                         }
-                        FlightModesSection {
-                            id: flightModePanel
+                        ReactorSection {
+                            id: reactorPanel
                             width: panelContent.width
                             theme: dashboardTheme
-                            source: flightModes
+                            source: reactorSource
+                            flightModes: flightModes
+                            availableHeight: panelContent.height
                             selected: root.activeModule === 3
                             visible: root.activeModule === 3
                             onDismissRequested: root.releaseFocus()
                         }
-                        WorkspaceRadar {
-                            id: workspaceRadar
+                        CommsSection {
+                            id: commsPanel
                             width: panelContent.width
                             theme: dashboardTheme
-                            source: workspaceRadarSource
+                            source: commsSource
+                            availableHeight: panelContent.height
                             selected: root.activeModule === 4
                             visible: root.activeModule === 4
                             onDismissRequested: root.releaseFocus()
                         }
-                        ThemeReactorSection {
-                            id: themeReactorPanel
+                        DepotSection {
+                            id: depotPanel
                             width: panelContent.width
                             theme: dashboardTheme
-                            source: themeReactor
+                            source: depotSource
+                            availableHeight: panelContent.height
                             selected: root.activeModule === 5
                             visible: root.activeModule === 5
+                            onDismissRequested: root.releaseFocus()
+                            onUpdateLaunched: {
+                                syslog.log("DEPOT", "full update launched in a floating terminal", "ok");
+                                root.sfx("complete");
+                            }
+                        }
+                        CodexSection {
+                            id: codexPanel
+                            width: panelContent.width
+                            theme: dashboardTheme
+                            source: codexSource
+                            availableHeight: panelContent.height
+                            selected: root.activeModule === 6
+                            visible: root.activeModule === 6
                             onDismissRequested: root.releaseFocus()
                         }
                     }
@@ -772,7 +1064,8 @@ Item {
                 anchors.margins: 20
                 theme: dashboardTheme
                 prompt: "forge@" + root.hostName
-                hint: "[:] COMMAND   [ESC] CORE   [T G M F W R] MODULES   " + root.shortcutStatus
+                hint: "[:] COMMAND   [SPACE] LAUNCH   [ESC ESC] EXIT   [T G L R C D K] MODULES"
+                completer: function(text) { return root.complete(text); }
                 onSubmitted: function(command) { root.runCommand(command); }
                 onDismissed: core.focusPicker()
             }
@@ -789,6 +1082,69 @@ Item {
                     color: index % 2 ? dashboardTheme.accentColor : dashboardTheme.urgentColor
                     opacity: root.glitch * 0.12
                     z: 20
+                }
+            }
+
+            // Launch streak: a beam fires out of the forge, then the deck
+            // closes so the new app takes the screen.
+            Item {
+                id: launchFx
+                anchors.fill: parent
+                z: 40
+                visible: beam.width > 0 || flare.opacity > 0
+                property string appName: ""
+                function fire(name) {
+                    appName = name;
+                    syslog.log("HANGAR", "launching " + name, "ok");
+                    root.sfx("service-login");
+                    root.pulseGlitch();
+                    launchAnim.restart();
+                }
+                Rectangle {
+                    id: beam
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: (parent.width - width) / 2
+                    width: 0
+                    height: 3
+                    color: Qt.lighter(dashboardTheme.accentColor, 1.6)
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width
+                        height: 24
+                        opacity: 0.25
+                        gradient: Gradient {
+                            GradientStop { position: 0; color: "transparent" }
+                            GradientStop { position: 0.5; color: dashboardTheme.accentColor }
+                            GradientStop { position: 1; color: "transparent" }
+                        }
+                    }
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: beam.top
+                    anchors.bottomMargin: 18
+                    opacity: beam.width > 0 ? 1 : 0
+                    text: "LAUNCHING  //  " + launchFx.appName.toUpperCase()
+                    color: dashboardTheme.foregroundColor
+                    font.family: Style.font.menuFamily
+                    font.pixelSize: 22
+                    font.bold: true
+                    font.letterSpacing: 6
+                }
+                Rectangle {
+                    id: flare
+                    anchors.fill: parent
+                    color: Qt.lighter(dashboardTheme.accentColor, 1.6)
+                    opacity: 0
+                }
+                SequentialAnimation {
+                    id: launchAnim
+                    NumberAnimation { target: beam; property: "width"; from: 0; to: launchFx.width; duration: 320; easing.type: Easing.OutExpo }
+                    PauseAnimation { duration: 220 }
+                    NumberAnimation { target: flare; property: "opacity"; to: 0.7; duration: 90 }
+                    ScriptAction { script: root.close() }
+                    PropertyAction { target: beam; property: "width"; value: 0 }
+                    PropertyAction { target: flare; property: "opacity"; value: 0 }
                 }
             }
 
@@ -813,6 +1169,29 @@ Item {
                     Qt.callLater(function() { core.focusPicker(); });
                 }
             }
+
+            // CRT power-off: squash to a line, pinch to a dot, close.
+            SequentialAnimation {
+                id: shutdownAnim
+                NumberAnimation { target: crt; property: "yScale"; to: 0.004; duration: 220; easing.type: Easing.InQuad }
+                PropertyAction { target: offLine; property: "opacity"; value: 1 }
+                NumberAnimation { target: crt; property: "xScale"; to: 0; duration: 200; easing.type: Easing.InCubic }
+                PauseAnimation { duration: 80 }
+                ScriptAction { script: root.close() }
+                PropertyAction { target: crt; property: "xScale"; value: 1 }
+                PropertyAction { target: crt; property: "yScale"; value: 1 }
+                PropertyAction { target: offLine; property: "opacity"; value: 0 }
+            }
+        }
+
+        // CRT power-off line lives outside the scaled screen so it stays crisp.
+        Rectangle {
+            id: offLine
+            anchors.centerIn: parent
+            width: parent.width * crt.xScale
+            height: 2
+            color: Qt.lighter(dashboardTheme.accentColor, 1.8)
+            opacity: 0
         }
     }
 }

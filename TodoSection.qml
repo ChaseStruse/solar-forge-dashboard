@@ -41,24 +41,13 @@ Column {
         onTriggered: root.currentTime = Date.now()
     }
 
-    RowLayout {
-        width: parent.width
-        Text {
-            Layout.fillWidth: true
-            text: "OBJECTIVES COMMAND CENTER"
-            color: root.theme.urgentColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: 17
-            font.bold: true
-            font.letterSpacing: 1.7
-        }
-        Text {
-            text: root.store.error ? "STORAGE DEGRADED" : "LOCAL DATA ONLINE"
-            color: root.store.error ? root.theme.urgentColor : root.theme.secondaryAccentColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: 11
-            font.bold: true
-        }
+    PanelHeader {
+        theme: root.theme
+        eyebrow: "OBJECTIVES"
+        title: root.store.activeCount ? root.store.activeCount + " OBJECTIVES IN QUEUE" : "QUEUE CLEAR"
+        subtitle: "Enter adds · click toggles · the bell arms an Omarchy reminder. Also: todo <text> from the command line."
+        status: root.store.error ? "STORAGE DEGRADED" : "LOCAL DATA ONLINE"
+        warning: root.store.error.length > 0
     }
 
     GridLayout {
@@ -66,46 +55,15 @@ Column {
         columns: root.width < 650 ? 2 : 4
         columnSpacing: 10
         rowSpacing: 10
-        Repeater {
-            model: [
-                { label: "ACTIVE", value: root.store.activeCount, tone: "urgent" },
-                { label: "CLOSED", value: root.store.closedCount, tone: "autonomous" },
-                { label: "REMINDERS", value: root.reminderSource.reminders.length, tone: "accent" },
-                { label: "TOTAL", value: root.store.totalCount, tone: "neutral" }
-            ]
-            delegate: Rectangle {
-                required property int index
-                required property var modelData
-                readonly property color toneColor: modelData.tone === "urgent" ? root.theme.urgentColor
-                    : modelData.tone === "autonomous" ? root.theme.secondaryAccentColor
-                    : modelData.tone === "accent" ? root.theme.accentColor : root.theme.foregroundColor
-                Layout.fillWidth: true
-                implicitWidth: 150
-                implicitHeight: 72
-                color: Util.alpha(toneColor, 0.07)
-                border.color: Util.alpha(toneColor, 0.3)
-                border.width: 1
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 2
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: String(modelData.value)
-                        color: parent.parent.toneColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: 23
-                        font.bold: true
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: modelData.label
-                        color: root.theme.dimmedTextColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: 11
-                        font.letterSpacing: 1
-                    }
-                }
-            }
+        StatTile { Layout.fillWidth: true; theme: root.theme; value: String(root.store.activeCount); label: "ACTIVE"; tone: root.theme.urgentColor }
+        StatTile { Layout.fillWidth: true; theme: root.theme; value: String(root.store.closedCount); label: "CLOSED"; tone: root.theme.secondaryAccentColor }
+        StatTile { Layout.fillWidth: true; theme: root.theme; value: String(root.reminderSource.reminders.length); label: "REMINDERS"; tone: root.theme.accentColor }
+        StatTile {
+            Layout.fillWidth: true
+            theme: root.theme
+            value: root.store.totalCount ? Math.round(root.store.closedCount / root.store.totalCount * 100) + "%" : "—"
+            label: "COMPLETION"
+            tone: root.theme.foregroundColor
         }
     }
 

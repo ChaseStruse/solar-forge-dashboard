@@ -1,19 +1,20 @@
 import QtQuick
-import qs.Commons
+// Namespaced: an unqualified `Color` can resolve to another module's type.
+import qs.Commons as Commons
 
 QtObject {
     // Omarchy's Color singleton reloads these bindings whenever the desktop
     // theme changes, keeping the dashboard aligned with the active palette.
-    readonly property color backgroundColor: Color.popups.background
-    readonly property color foregroundColor: Color.popups.text
-    readonly property color accentColor: Color.accent
-    readonly property color secondaryAccentColor: Color.bar.active
-    readonly property color urgentColor: Color.urgent
-    readonly property color surfaceColor: Util.alpha(Color.popups.text, 0.08)
-    readonly property color completedSurfaceColor: Util.alpha(Color.popups.text, 0.04)
-    readonly property color borderColor: Util.alpha(Color.popups.border, 0.48)
-    readonly property color dimmedTextColor: Util.alpha(Color.popups.text, 0.62)
-    readonly property color faintTextColor: Util.alpha(Color.popups.text, 0.45)
+    readonly property color backgroundColor: Commons.Color.popups.background
+    readonly property color foregroundColor: Commons.Color.popups.text
+    readonly property color accentColor: Commons.Color.accent
+    readonly property color secondaryAccentColor: Commons.Color.bar.active
+    readonly property color urgentColor: Commons.Color.urgent
+    readonly property color surfaceColor: Commons.Util.alpha(Commons.Color.popups.text, 0.08)
+    readonly property color completedSurfaceColor: Commons.Util.alpha(Commons.Color.popups.text, 0.04)
+    readonly property color borderColor: Commons.Util.alpha(Commons.Color.popups.border, 0.48)
+    readonly property color dimmedTextColor: Commons.Util.alpha(Commons.Color.popups.text, 0.62)
+    readonly property color faintTextColor: Commons.Util.alpha(Commons.Color.popups.text, 0.45)
 
     // Type scale. Nothing renders below fontMicro so telemetry stays legible.
     readonly property int fontMicro: 11
