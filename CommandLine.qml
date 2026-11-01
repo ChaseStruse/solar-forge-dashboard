@@ -9,6 +9,11 @@ Item {
     property string hint: ""
     property var history: []
     property int historyIndex: -1
+    // function(text) → [{ value, label, hint }]
+    property var completer: null
+    property var suggestions: []
+    property int suggestionIndex: 0
+    readonly property bool suggesting: input.activeFocus && input.text.length > 0 && suggestions.length > 0
     signal submitted(string command)
     signal dismissed()
     readonly property bool active: input.activeFocus
@@ -84,15 +89,32 @@ Item {
             font: input.font
         }
 
+        onTextChanged: {
+            root.suggestions = root.completer && text.length ? root.completer(text) : [];
+            root.suggestionIndex = 0;
+        }
         Keys.onReturnPressed: submit()
         Keys.onEnterPressed: submit()
         Keys.onEscapePressed: {
+            if (root.suggesting) {
+                root.suggestions = [];
+                return;
+            }
             input.text = "";
             root.historyIndex = -1;
             root.dismissed();
         }
-        Keys.onUpPressed: recall(1)
-        Keys.onDownPressed: recall(-1)
+        Keys.onTabPressed: accept()
+        Keys.onUpPressed: root.suggesting ? root.suggestionIndex = Math.max(0, root.suggestionIndex - 1) : recall(1)
+        Keys.onDownPressed: root.suggesting ? root.suggestionIndex = Math.min(root.suggestions.length - 1, root.suggestionIndex + 1) : recall(-1)
+
+        function accept() {
+            var pick = root.suggestions[root.suggestionIndex];
+            if (!pick)
+                return;
+            text = pick.value;
+            cursorPosition = text.length;
+        }
 
         function submit() {
             var command = text.trim();
@@ -109,6 +131,51 @@ Item {
             root.historyIndex = Math.max(-1, Math.min(root.history.length - 1, root.historyIndex + delta));
             text = root.historyIndex < 0 ? "" : root.history[root.historyIndex];
             cursorPosition = text.length;
+        }
+    }
+
+    Column {
+        id: popup
+        visible: root.suggesting
+        anchors.left: parent.left
+        anchors.leftMargin: 26 + promptText.implicitWidth + 50
+        anchors.bottom: parent.top
+        anchors.bottomMargin: 6
+        width: Math.min(560, parent.width * 0.5)
+        Repeater {
+            model: root.suggestions
+            Rectangle {
+                required property var modelData
+                required property int index
+                readonly property bool current: index === root.suggestionIndex
+                width: popup.width
+                height: 30
+                color: current ? Util.alpha(root.theme.accentColor, 0.22) : Util.alpha(root.theme.backgroundColor, 0.94)
+                border.color: Util.alpha(root.theme.accentColor, current ? 0.8 : 0.25)
+                Text {
+                    x: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: modelData.label
+                    color: current ? root.theme.foregroundColor : root.theme.dimmedTextColor
+                    font.family: Style.font.menuFamily
+                    font.pixelSize: root.theme.fontSmall
+                    font.bold: current
+                }
+                Text {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: (current ? "TAB  ·  " : "") + String(modelData.hint || "").toUpperCase()
+                    color: root.theme.faintTextColor
+                    font.family: Style.font.menuFamily
+                    font.pixelSize: root.theme.fontMicro
+                    font.letterSpacing: 1
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: { root.suggestionIndex = index; input.accept(); input.forceActiveFocus(); }
+                }
+            }
         }
     }
 

@@ -37,11 +37,20 @@ Item {
     readonly property var modules: [
         { name: "OBJECTIVES", key: "T", glyph: "" },
         { name: "GITHUB INTEL", key: "G", glyph: "" },
-        { name: "MISSION TIMELINE", key: "M", glyph: "" },
-        { name: "FLIGHT MODES", key: "F", glyph: "󰈐" },
-        { name: "WORKSPACE RADAR", key: "W", glyph: "󰍹" },
-        { name: "THEME REACTOR", key: "R", glyph: "󰏘" }
+        { name: "LAUNCH CONTROL", key: "L", glyph: "󱓞" },
+        { name: "REACTOR", key: "R", glyph: "󰈸" },
+        { name: "COMMS ARRAY", key: "C", glyph: "󰖩" },
+        { name: "SUPPLY DEPOT", key: "D", glyph: "󰏗" },
+        { name: "KEYBIND CODEX", key: "K", glyph: "󰌌" }
     ]
+    // Per-planet telemetry supplied by the dashboard:
+    // { badge: string, alert: bool, progress: 0..1 or -1, detail: string }
+    property var planetStates: []
+    function planetState(index) {
+        return planetStates[index] || { badge: "", alert: false, progress: -1, detail: "" };
+    }
+    // Space in the core jumps straight to this module, like SUPER + SPACE.
+    property int launcherModule: 2
 
     // 0 = idle, 1 = critical. Load drives the base; active warnings add heat.
     readonly property real heat: {
@@ -81,14 +90,27 @@ Item {
         return chamber.height / 2 + Math.sin(angle) * radius * orbitTilt;
     }
 
-    // Alternate modules between two three-planet orbits. Integer speeds
-    // preserve the seamless animation loop.
+    // Even modules ride the inner orbit until it holds half (rounded down);
+    // the rest fill the outer orbit. Integer speeds keep the loop seamless.
+    readonly property int innerCount: Math.floor(modules.length / 2)
+    function isInner(index) {
+        return index % 2 === 0 && index / 2 < innerCount;
+    }
+    function orbitSlot(index) {
+        if (isInner(index))
+            return index / 2;
+        var slot = 0;
+        for (var i = 0; i < index; i++)
+            if (!isInner(i)) slot++;
+        return slot;
+    }
     function planetOrbit(index) {
-        return chamber.width * (index % 2 === 0 ? innerModuleOrbit : outerModuleOrbit) * ignition;
+        return chamber.width * (isInner(index) ? innerModuleOrbit : outerModuleOrbit) * ignition;
     }
     function planetAngle(index, phase) {
-        var inner = index % 2 === 0;
-        return phase * (inner ? 2 : 1) + Math.floor(index / 2) * Math.PI * 2 / 3 + (inner ? 0 : Math.PI / 3);
+        var inner = isInner(index);
+        var count = inner ? innerCount : modules.length - innerCount;
+        return phase * (inner ? 2 : 1) + orbitSlot(index) * Math.PI * 2 / count + (inner ? 0 : Math.PI / count);
     }
 
     // Selected planet centre in this item's coordinates, for the conduit.
@@ -98,13 +120,15 @@ Item {
 
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) {
-            root.moduleNavigated((root.selectedModule + 5) % 6);
+            root.moduleNavigated((root.selectedModule + root.modules.length - 1) % root.modules.length);
             event.accepted = true;
         } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || event.key === Qt.Key_Tab) {
-            root.moduleNavigated((root.selectedModule + 1) % 6);
+            root.moduleNavigated((root.selectedModule + 1) % root.modules.length);
             event.accepted = true;
-        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter
-                || event.key === Qt.Key_Space) {
+        } else if (event.key === Qt.Key_Space) {
+            root.moduleOpened(root.launcherModule);
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
             if (root.selectedModule >= 0)
                 root.moduleOpened(root.selectedModule);
             event.accepted = true;
@@ -349,7 +373,7 @@ Item {
         }
 
         Repeater {
-            model: 6
+            model: root.modules.length
             Item {
                 id: planet
                 required property int index
@@ -357,6 +381,7 @@ Item {
                 readonly property real angle: root.planetAngle(index, root.corePhase)
                 readonly property real depth: Math.sin(angle)
                 readonly property bool selected: root.selectedModule === index
+                readonly property var status: root.planetState(index)
                 width: Math.min(88, Math.max(root.docked ? 34 : 44, chamber.width * 0.078))
                 height: width
                 x: root.orbitX(angle, orbitRadius) - width / 2
@@ -364,6 +389,52 @@ Item {
                 z: depth < 0 ? -1 : 2
                 scale: 0.9 + depth * 0.13
                 opacity: 0.82 + depth * 0.16
+                // Distress pulse: expanding urgent ring while the module needs you.
+                Rectangle {
+                    id: distress
+                    anchors.centerIn: parent
+                    width: parent.width
+                    height: width
+                    radius: width / 2
+                    color: "transparent"
+                    border.color: root.theme.urgentColor
+                    border.width: 2
+                    visible: planet.status.alert
+                    opacity: 0
+                    SequentialAnimation {
+                        running: distress.visible && root.animating
+                        loops: Animation.Infinite
+                        ParallelAnimation {
+                            NumberAnimation { target: distress; property: "scale"; from: 1; to: 1.9; duration: 1300; easing.type: Easing.OutCubic }
+                            NumberAnimation { target: distress; property: "opacity"; from: 0.9; to: 0; duration: 1300 }
+                        }
+                        PauseAnimation { duration: 500 }
+                    }
+                }
+                // Progress halo: an arc that fills with the module's completion.
+                Canvas {
+                    anchors.fill: parent
+                    anchors.margins: -4
+                    visible: planet.status.progress >= 0
+                    property real progress: Math.max(0, Math.min(1, planet.status.progress))
+                    Behavior on progress { NumberAnimation { duration: 900; easing.type: Easing.OutCubic } }
+                    property color ink: root.theme.accentColor
+                    onProgressChanged: requestPaint()
+                    onInkChanged: requestPaint()
+                    onWidthChanged: requestPaint()
+                    onPaint: {
+                        var c = getContext("2d"); c.reset();
+                        var m = width / 2;
+                        c.lineWidth = 2;
+                        c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.18);
+                        c.beginPath(); c.arc(m, m, m - 1.5, 0, Math.PI * 2); c.stroke();
+                        if (progress > 0) {
+                            c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.95);
+                            c.lineWidth = 3;
+                            c.beginPath(); c.arc(m, m, m - 1.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress); c.stroke();
+                        }
+                    }
+                }
                 // Targeting reticle: spinning dashed ring with corner ticks.
                 Item {
                     anchors.fill: parent
@@ -422,7 +493,7 @@ Item {
                     font.pixelSize: Math.max(15, planet.width * 0.4)
                 }
                 Rectangle {
-                    visible: planet.index === 1 && root.githubSource.actionableCount > 0
+                    visible: String(planet.status.badge).length > 0
                     anchors.right: parent.right
                     anchors.top: parent.top
                     anchors.margins: -4
@@ -436,7 +507,7 @@ Item {
                     Text {
                         id: badgeText
                         anchors.centerIn: parent
-                        text: root.githubSource.actionableCount > 99 ? "99+" : String(root.githubSource.actionableCount)
+                        text: String(planet.status.badge)
                         color: root.theme.backgroundColor
                         font.family: Style.font.menuFamily
                         font.pixelSize: 10
@@ -446,8 +517,7 @@ Item {
                 ToolTip.visible: pointer.containsMouse
                 ToolTip.delay: 350
                 ToolTip.text: root.modules[planet.index].name
-                    + (planet.index === 1 ? (root.githubSource.actionableCount
-                        ? " · " + root.githubSource.actionableCount + " need attention" : " · inbox clear") : "")
+                    + (planet.status.detail ? " · " + planet.status.detail : "")
                     + " · " + root.modules[planet.index].key + " to toggle · Enter to focus"
                 MouseArea {
                     id: pointer

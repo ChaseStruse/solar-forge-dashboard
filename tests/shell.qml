@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 
 ShellRoot {
     TodoStore {
@@ -38,25 +39,27 @@ ShellRoot {
     SystemReadinessSource {
         id: readiness
     }
-    ThemeReactorSection {
-        id: themeReactorSection
-        width: 900
-        theme: theme
-        source: themeReactor
-    }
     GitHubSection {
         id: githubSection
         width: 900
         theme: theme
         source: github
     }
-    MissionTimeline {
-        id: missionTimeline
+    LauncherSection {
+        id: launcherSection
         width: 900
         theme: theme
-        source: missionSource
-        taskStore: store
-        reminderSource: reminders
+        radar: workspaceRadar
+    }
+    ScriptSource {
+        id: codexSource
+        script: "codex-state.sh"
+    }
+    CodexSection {
+        id: codexSection
+        width: 900
+        theme: theme
+        source: codexSource
     }
     FlightModesSection {
         id: flightModesSection
@@ -108,27 +111,12 @@ ShellRoot {
                 check(reminders.displayLabel("☀ Objective #42 · Write tests", "") === "Write tests", "clean reminder label");
                 check(reminders.consume('{"count":1,"reminders":[{"unit":"omarchy-reminder-25m-1","message":"☀ Objective #42 · Write tests","at":2000000000,"atTime":"10:00","remainingSeconds":120}]}'), "parse reminder inventory");
                 check(reminders.reminders.length === 1 && reminders.reminders[0].taskId === 42, "normalize linked reminder");
-                check(missionTimeline.outstandingTasks(5).length === 5, "mission control limits outstanding task summary");
-                check(missionTimeline.outstandingTasks(5)[0].title === "Task 1", "mission control skips completed tasks");
-                check(missionTimeline.upcomingReminders(5).length === 1, "mission control shows upcoming reminders");
-                check(missionTimeline.upcomingReminders(5)[0].label === "Write tests", "mission control cleans reminder labels");
-                check(missionTimeline.countdown(Date.now() + 120000).indexOf("m") > 0, "mission control formats reminder countdown");
                 check(themeReactor.consume('{"currentTheme":"Cyberpunking","wallpaperPath":"","wallpaperName":"Neon City","themes":[{"id":"cyberpunking","name":"Cyberpunking","accent":"#26e6ff","secondary":"#ff65d9","background":"#0b101b","backgroundCount":3,"current":true},{"id":"nord","name":"Nord","accent":"#88c0d0","secondary":"#b48ead","background":"#2e3440","backgroundCount":2,"current":false}]}'), "parse theme reactor inventory");
                 check(themeReactor.themes.length === 2, "theme reactor lists installed themes");
                 check(themeReactor.themeByName("Nord").accent === "#88c0d0", "theme reactor resolves theme identity");
                 check(themeReactor.themeByName("Missing") === null, "theme reactor rejects unknown theme");
                 check(!themeReactor.applyTheme("Missing"), "unknown theme is not applied");
                 check(themeReactor.wallpaperName === "Neon City", "theme reactor exposes wallpaper identity");
-                check(themeReactorSection.implicitHeight > 0, "theme reactor panel lays out");
-                themeReactorSection.selectedIndex = 0;
-                themeReactorSection.moveSelection(1);
-                check(themeReactorSection.selectedIndex === 1, "theme reactor keyboard selection advances");
-                themeReactorSection.moveSelection(1);
-                check(themeReactorSection.selectedIndex === 0, "theme reactor keyboard selection wraps");
-                themeReactorSection.moveSelection(-15);
-                check(themeReactorSection.selectedIndex === 1, "page navigation wraps across small theme inventories");
-                themeReactorSection.selectedIndex = 1;
-                check(themeReactorSection.selectActiveTheme() && themeReactorSection.selectedIndex === 0, "theme reactor keyboard returns to active theme");
                 check(readiness.consume('{"cpuPercent":32,"memoryPercent":48,"gpuPercent":12,"gpuTemperature":51,"gpuName":"Test GPU","diskPercent":61,"batteryPresent":true,"batteryPercent":78,"batteryStatus":"Discharging","acOnline":false,"powerWatts":8.4,"powerProfile":"balanced","updatesAvailable":false,"networkOnline":true,"networkName":"Test WiFi","bluetoothPowered":true,"bluetoothConnected":false}'), "parse readiness telemetry");
                 check(readiness.metrics.length === 8, "readiness ring exposes eight telemetry arcs");
                 check(readiness.warningCount === 0, "nominal readiness has no warning arcs");
@@ -195,8 +183,26 @@ ShellRoot {
                 check(!workspaceRadar.closeWindow("bad-address"), "reject invalid close action");
                 check(!workspaceRadar.consume("bad state", "[]", "{}"), "reject malformed workspace state");
                 check(flightModesSection.implicitHeight > 0, "flight mode panel lays out");
-                check(theme.accentColor === Color.accent, "core color follows theme accent");
-                check(theme.secondaryAccentColor === Color.bar.active, "planet color follows theme secondary accent");
+                // Colours are value types: compare by value, not identity.
+                check(Qt.colorEqual(theme.accentColor, Commons.Color.accent), "core color follows theme accent");
+                check(Qt.colorEqual(theme.secondaryAccentColor, Commons.Color.bar.active), "planet color follows theme secondary accent");
+                check(Math.abs(theme.mix(Qt.rgba(0, 0, 0, 1), Qt.rgba(1, 1, 1, 1), 0.5).r - 0.5) < 0.01, "theme mixes colours");
+                check(launcherSection.score({ name: "Firefox" }, "fire") >= 0, "launcher matches name prefix");
+                check(launcherSection.score({ name: "Visual Studio Code" }, "vsc") >= 0, "launcher matches subsequence");
+                check(launcherSection.score({ name: "Firefox" }, "zzz") < 0, "launcher rejects non-matches");
+                check(launcherSection.score({ name: "Firefox" }, "firefox") < launcherSection.score({ name: "Firefox Nightly" }, "firefox"), "exact match ranks first");
+                check(launcherSection.windows.length === 2, "launcher lists running windows");
+                check(codexSection.chord({ modmask: 64 + 1, key: "Q" }) === "SUPER + SHIFT + Q", "codex formats chords");
+                codexSource.data = { binds: [{ modmask: 64, key: "RETURN", description: "Terminal", mouse: false }, { modmask: 64, key: "B", description: "Browser", mouse: false }] };
+                codexSection.search("term");
+                check(codexSection.matches.length === 1 && codexSection.matches[0].chord === "SUPER + ENTER", "codex filters bindings");
+                check(core.modules.length === 7, "seven forge modules");
+                var slots = {};
+                for (var p = 0; p < core.modules.length; p++)
+                    slots[(core.isInner(p) ? "i" : "o") + core.orbitSlot(p)] = true;
+                check(Object.keys(slots).length === 7, "every planet gets a unique orbit slot");
+                check(dashboard.complete("scr")[0].value === "screenshot ", "complete command names");
+                check(dashboard.complete("mode f").length === 2, "complete command arguments");
                 dashboard.opened = true;
                 dashboard.close();
                 dashboard.close();
@@ -215,9 +221,11 @@ ShellRoot {
                 dashboard.openModule(42);
                 check(dashboard.activeModule === 1, "invalid module ignored");
                 core.moduleSelected(3);
-                check(dashboard.activeModule === 3, "toggle opens Flight Modes");
-                core.moduleSelected(5);
-                check(dashboard.activeModule === 5, "toggle opens Theme Reactor");
+                check(dashboard.activeModule === 3, "toggle opens Reactor");
+                core.moduleSelected(6);
+                check(dashboard.activeModule === 6, "toggle opens Codex");
+                dashboard.openModule(7);
+                check(dashboard.activeModule === 6, "out-of-range module ignored");
                 core.animating = true;
                 lifecycle.start();
             } catch (failure) {

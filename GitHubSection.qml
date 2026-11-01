@@ -72,30 +72,15 @@ Column {
         }
     }
 
-    RowLayout {
-        width: parent.width
-        Text {
-            Layout.fillWidth: true
-            text: "GITHUB COMMAND CENTER"
-            color: root.theme.accentColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: 17
-            font.bold: true
-            font.letterSpacing: 1.7
-        }
-        Text {
-            text: root.source.viewerLogin ? "@" + root.source.viewerLogin : "IDENTITY OFFLINE"
-            color: root.theme.secondaryAccentColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: 12
-            font.bold: true
-        }
-        Text {
-            text: root.source.loading ? "SYNCING" : "UPDATED " + (root.source.refreshedAt || "—")
-            color: root.theme.faintTextColor
-            font.family: Style.font.menuFamily
-            font.pixelSize: 11
-        }
+    PanelHeader {
+        theme: root.theme
+        eyebrow: "GITHUB INTEL"
+        title: root.source.viewerLogin ? "@" + root.source.viewerLogin.toUpperCase() : "IDENTITY OFFLINE"
+        subtitle: "Failed checks, review requests, and merge-ready work, ranked. "
+            + (root.source.loading ? "Syncing…" : "Updated " + (root.source.refreshedAt || "—") + ".")
+        status: root.source.actionableCount ? root.source.actionableCount + " NEED ATTENTION" : "INBOX CLEAR"
+        warning: root.source.actionableCount > 0
+        busy: root.source.loading
     }
 
     GridLayout {
@@ -105,35 +90,14 @@ Column {
         rowSpacing: 8
         Repeater {
             model: root.source.profileStats
-            delegate: Rectangle {
+            delegate: StatTile {
                 required property int index
                 required property var modelData
                 Layout.fillWidth: true
-                implicitWidth: 120
-                implicitHeight: 64
-                color: Util.alpha(index % 2 ? root.theme.secondaryAccentColor : root.theme.accentColor, 0.07)
-                border.color: Util.alpha(index % 2 ? root.theme.secondaryAccentColor : root.theme.accentColor, 0.28)
-                border.width: 1
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 2
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: String(modelData.value)
-                        color: index % 2 ? root.theme.secondaryAccentColor : root.theme.accentColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: 20
-                        font.bold: true
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: modelData.label
-                        color: root.theme.dimmedTextColor
-                        font.family: Style.font.menuFamily
-                        font.pixelSize: 11
-                        font.letterSpacing: 0.7
-                    }
-                }
+                theme: root.theme
+                value: String(modelData.value)
+                label: modelData.label
+                tone: index % 2 ? root.theme.secondaryAccentColor : root.theme.accentColor
             }
         }
     }
